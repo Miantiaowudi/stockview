@@ -37,15 +37,11 @@ export default function RegisterPage() {
       return
     }
 
-    // 如果返回了 user，说明用户已存在（自动登录了）
+    // 如果返回了 user，说明用户已存在
     if (data?.user) {
-      // 检查用户是否已验证邮箱
-      if (data.user.email_confirmed_at) {
-        setError('该邮箱已注册，请直接登录')
-        setLoading(false)
-        return
-      }
-      // 用户存在但未验证，显示成功（会发送验证邮件）
+      setError('该邮箱已注册，请直接登录')
+      setLoading(false)
+      return
     }
 
     setSuccess(true)
