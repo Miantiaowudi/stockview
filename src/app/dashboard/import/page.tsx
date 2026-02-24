@@ -112,15 +112,25 @@ export default function ImportPage() {
     // 检测格式
     const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
     
+    // 按优先级检测格式（通用放最后）
+    const priorityFormats = ['银河', '华泰', '中信', '国泰', '通用']
     let detectedFormat = '通用'
-    for (const [name, format] of Object.entries(BROKER_FORMATS)) {
+    let maxMatch = 0
+    
+    for (const name of priorityFormats) {
+      const format = BROKER_FORMATS[name as keyof typeof BROKER_FORMATS]
       const matchCount = format.columns.filter(col => 
         header.some(h => h.includes(col) || col.includes(h))
       ).length
-      if (matchCount >= 3) {
+      if (matchCount > maxMatch) {
+        maxMatch = matchCount
         detectedFormat = name
-        break
       }
+    }
+
+    // 如果最高匹配数低于3，使用通用格式
+    if (maxMatch < 3) {
+      detectedFormat = '通用'
     }
 
     setSelectedBroker(detectedFormat)
@@ -183,15 +193,25 @@ export default function ImportPage() {
 
       // 检测格式
       const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+      // 按优先级检测格式（通用放最后）
+      const priorityFormats = ['银河', '华泰', '中信', '国泰', '通用']
       let detectedFormat = '通用'
-      for (const [name, format] of Object.entries(BROKER_FORMATS)) {
+      let maxMatch = 0
+      
+      for (const name of priorityFormats) {
+        const format = BROKER_FORMATS[name as keyof typeof BROKER_FORMATS]
         const matchCount = format.columns.filter(col => 
           header.some(h => h.includes(col) || col.includes(h))
         ).length
-        if (matchCount >= 3) {
+        if (matchCount > maxMatch) {
+          maxMatch = matchCount
           detectedFormat = name
-          break
         }
+      }
+
+      // 如果最高匹配数低于3，使用通用格式
+      if (maxMatch < 3) {
+        detectedFormat = '通用'
       }
 
       // 解析所有数据
