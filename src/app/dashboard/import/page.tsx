@@ -380,34 +380,35 @@ export default function ImportPage() {
           {/* 预览数据 */}
           {previewData.length > 0 && (
             <div className="mb-4">
-              <h3 className="font-medium mb-2">预览（前5条）</h3>
+              <h3 className="font-medium mb-2">预览（前5条） - {selectedBroker} 格式</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-3 py-2 text-left">时间</th>
-                      <th className="px-3 py-2 text-left">代码</th>
-                      <th className="px-3 py-2 text-left">名称</th>
-                      <th className="px-3 py-2 text-left">方向</th>
-                      <th className="px-3 py-2 text-right">数量</th>
-                      <th className="px-3 py-2 text-right">价格</th>
+                      {BROKER_FORMATS[selectedBroker as keyof typeof BROKER_FORMATS]?.columns.slice(0, 6).map((col: string, i: number) => (
+                        <th key={i} className="px-3 py-2 text-left">{col}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {previewData.map((row, i) => (
-                      <tr key={i} className="border-t">
-                        <td className="px-3 py-2">{row.trade_time}</td>
-                        <td className="px-3 py-2">{row.stock_code}</td>
-                        <td className="px-3 py-2">{row.stock_name}</td>
-                        <td className="px-3 py-2">
-                          <span className={row.direction === 'buy' ? 'text-green-600' : 'text-red-600'}>
-                            {row.direction === 'buy' ? '买入' : '卖出'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-right">{row.quantity}</td>
-                        <td className="px-3 py-2 text-right">{row.price}</td>
-                      </tr>
-                    ))}
+                    {previewData.map((row, i) => {
+                      const values = Object.values(row).filter(v => v !== undefined)
+                      return (
+                        <tr key={i} className="border-t">
+                          {values.slice(0, 6).map((val: any, j: number) => (
+                            <td key={j} className="px-3 py-2">
+                              {j === 3 && typeof val === 'string' ? (
+                                <span className={val === 'buy' ? 'text-green-600' : 'text-red-600'}>
+                                  {val === 'buy' ? '买入' : val === 'sell' ? '卖出' : val}
+                                </span>
+                              ) : (
+                                val
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
