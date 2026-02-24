@@ -97,10 +97,9 @@ export default function ImportPage() {
 
     setSelectedBroker('标准格式')
 
-    // 解析数据行
+    // 解析数据行（预览用原始值）
     const data = lines.slice(1, 6).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/"/g, ''))
-      return parseRow(values)
+      return line.split(',').map(v => v.trim().replace(/"/g, ''))
     })
 
     setPreviewData(data)
@@ -320,30 +319,27 @@ export default function ImportPage() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      {STANDARD_COLUMNS.slice(0, 6).map((col: string, i: number) => (
+                      {STANDARD_COLUMNS.map((col: string, i: number) => (
                         <th key={i} className="px-3 py-2 text-left">{col}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {previewData.map((row, i) => {
-                      const values = Object.values(row).filter(v => v !== undefined)
-                      return (
-                        <tr key={i} className="border-t">
-                          {values.slice(0, 6).map((val: any, j: number) => (
-                            <td key={j} className="px-3 py-2">
-                              {j === 3 && typeof val === 'string' ? (
-                                <span className={val === 'buy' ? 'text-green-600' : 'text-red-600'}>
-                                  {val === 'buy' ? '买入' : val === 'sell' ? '卖出' : val}
-                                </span>
-                              ) : (
-                                val
-                              )}
-                            </td>
-                          ))}
-                        </tr>
-                      )
-                    })}
+                    {previewData.map((row: any, i: number) => (
+                      <tr key={i} className="border-t">
+                        {row.map((val: string, j: number) => (
+                          <td key={j} className="px-3 py-2">
+                            {j === 4 && typeof val === 'string' ? (
+                              <span className={val.includes('买') ? 'text-green-600' : 'text-red-600'}>
+                                {val}
+                              </span>
+                            ) : (
+                              val
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
