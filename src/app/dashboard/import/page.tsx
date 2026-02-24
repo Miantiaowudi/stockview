@@ -314,7 +314,7 @@ export default function ImportPage() {
           {/* 预览数据 */}
           {previewData.length > 0 && (
             <div className="mb-4">
-              <h3 className="font-medium mb-2">预览（前5条） - {selectedBroker} 格式</h3>
+              <h3 className="font-medium mb-2">预览（前5条）</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
@@ -360,9 +360,8 @@ export default function ImportPage() {
           <h2 className="text-lg font-semibold mb-4">导入说明</h2>
           <ul className="text-sm text-gray-600 space-y-2">
             <li>1. 从券商客户端导出CSV格式的交割单</li>
-            <li>2. 支持华泰、中信、国泰等主流券商格式</li>
-            <li>3. 系统会自动识别券商格式</li>
-            <li>4. 导入后可在"账户分析"查看统计数据</li>
+            <li>2. 确保CSV文件包含标准表头</li>
+            <li>3. 导入后可在"账户分析"查看统计数据</li>
           </ul>
         </div>
       </main>
