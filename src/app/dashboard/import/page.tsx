@@ -45,6 +45,25 @@ const BROKER_FORMATS = {
       commission: parseFloat(row[7]) + parseFloat(row[8]),
     })
   },
+  '银河': {
+    columns: ['成交日期', '成交时间', '证券代码', '证券名称', '操作', '成交数量', '成交均价', '成交金额', '手续费', '印花税', '其他杂费'],
+    parse: (row: string[]) => {
+      const date = row[0]
+      const time = row[1]
+      // 转换日期格式 YYYYMMDD -> YYYY-MM-DD
+      const formattedDate = `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}`
+      return {
+        trade_time: `${formattedDate}T${time}`,
+        stock_code: row[2],
+        stock_name: row[3],
+        direction: row[4] === '卖出' ? 'sell' : 'buy',
+        quantity: parseFloat(row[5]),
+        price: parseFloat(row[6]),
+        amount: parseFloat(row[7]),
+        commission: parseFloat(row[10]) + parseFloat(row[11]) + parseFloat(row[12]),
+      }
+    }
+  },
   '通用': {
     columns: ['时间', '代码', '名称', '方向', '数量', '价格', '金额'],
     parse: (row: string[]) => ({
