@@ -18,24 +18,37 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    // 直接尝试注册，让 Supabase 返回具体错误
-    const { error } = await supabase.auth.signUp({
+    // 检查 signUp 返回的 data
+    const { error, data } = await supabase.auth.signUp({
       email,
       password,
     })
 
+    console.log('signUp result:', { error, data })
+
     if (error) {
       const msg = error.message.toLowerCase()
-      // 检查是否是用户已存在的错误
       if (msg.includes('user already') || msg.includes('already registered')) {
         setError('该邮箱已注册，请直接登录')
       } else {
         setError(error.message)
       }
       setLoading(false)
-    } else {
-      setSuccess(true)
+      return
     }
+
+    // 如果返回了 user，说明用户已存在（自动登录了）
+    if (data?.user) {
+      // 检查用户是否已验证邮箱
+      if (data.user.email_confirmed_at) {
+        setError('该邮箱已注册，请直接登录')
+        setLoading(false)
+        return
+      }
+      // 用户存在但未验证，显示成功（会发送验证邮件）
+    }
+
+    setSuccess(true)
   }
 
   if (success) {
