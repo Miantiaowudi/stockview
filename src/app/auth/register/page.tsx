@@ -24,8 +24,20 @@ export default function RegisterPage() {
       password: '__CHECK_EXISTS__',
     })
 
+    console.log('checkError:', checkError)
+
     // 如果能登录，说明用户已存在
     if (!checkError) {
+      setError('该邮箱已注册，请直接登录')
+      setLoading(false)
+      return
+    }
+
+    // 即使登录失败，也检查是否是"用户不存在"的错误
+    // 如果错误信息不包含用户不存在，可能用户已存在
+    const checkMsg = checkError?.message?.toLowerCase() || ''
+    if (!checkMsg.includes('user') && !checkMsg.includes('email')) {
+      // 未知错误，按用户已存在处理
       setError('该邮箱已注册，请直接登录')
       setLoading(false)
       return
@@ -35,6 +47,8 @@ export default function RegisterPage() {
       email,
       password,
     })
+
+    console.log('signup error:', error)
 
     if (error) {
       const msg = error.message.toLowerCase()
