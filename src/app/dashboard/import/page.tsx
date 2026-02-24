@@ -106,11 +106,27 @@ export default function ImportPage() {
 
   // 解析CSV文件
   const parseCSV = (content: string) => {
-    const lines = content.split('\n').filter(line => line.trim())
+    let text = content
+    
+    // 尝试检测编码，如果是乱码尝试用 GBK 解码
+    const hasChinese = (str: string) => /[\u4e00-\u9fa5]/.test(str)
+    if (!hasChinese(text.slice(0, 200))) {
+      // 尝试 GBK 解码
+      try {
+        const decoder = new TextDecoder('gbk')
+        const bytes = new Uint8Array([...content].map(c => c.charCodeAt(0)))
+        text = decoder.decode(bytes)
+      } catch (e) {
+        console.log('GBK decode failed')
+      }
+    }
+
+    const lines = text.split('\n').filter(line => line.trim())
     if (lines.length < 2) return null
 
     // 检测格式
     const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+    console.log('header:', header)
     
     // 按优先级检测格式（通用放最后）
     const priorityFormats = ['银河', '华泰', '中信', '国泰', '通用']
@@ -154,7 +170,21 @@ export default function ImportPage() {
     setImportResult(null)
 
     try {
-      const content = await file.text()
+      // 尝试用 UTF-8 读取
+      let content = await file.text()
+      
+      // 检查是否有乱码（如果没有中文字符）
+      const hasChinese = (str: string) => /[\u4e00-\u9fa5]/.test(str.slice(0, 500))
+      if (!hasChinese(content)) {
+        // 尝试用 GBK 读取
+        content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(reader.error)
+          reader.readAsText(file, 'gbk')
+        })
+      }
+      
       const result = parseCSV(content)
       
       if (!result) {
@@ -182,7 +212,20 @@ export default function ImportPage() {
     
     try {
       const file = fileInputRef.current.files[0]
-      const content = await file.text()
+      // 尝试用 UTF-8 读取
+      let content = await file.text()
+      
+      // 检查是否有乱码
+      const hasChinese = (str: string) => /[\u4e00-\u9fa5]/.test(str.slice(0, 500))
+      if (!hasChinese(content)) {
+        content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(reader.error)
+          reader.readAsText(file, 'gbk')
+        })
+      }
+      
       const lines = content.split('\n').filter(line => line.trim())
       
       if (lines.length < 2) {
