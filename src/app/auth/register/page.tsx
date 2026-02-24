@@ -24,7 +24,12 @@ export default function RegisterPage() {
     })
 
     if (error) {
-      setError(error.message)
+      const msg = error.message.toLowerCase()
+      if (msg.includes('user already') || msg.includes('already registered')) {
+        setError('该邮箱已注册，请直接登录')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
     } else {
       setSuccess(true)
