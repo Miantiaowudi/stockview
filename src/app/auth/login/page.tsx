@@ -23,7 +23,13 @@ export default function LoginPage() {
     })
 
     if (error) {
-      setError(error.message)
+      const msg = error.message.toLowerCase()
+      if (msg.includes('invalid') || msg.includes('credentials')) {
+        // 通用错误，先提示用户检查信息，并引导注册
+        setError('登录失败，请检查邮箱和密码是否正确。如未注册，请先前往注册。')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
     } else {
       router.push('/dashboard')
