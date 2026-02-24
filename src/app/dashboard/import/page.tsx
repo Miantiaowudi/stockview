@@ -4,78 +4,29 @@ import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-// 券商CSV格式定义
-const BROKER_FORMATS = {
-  '华泰': {
-    columns: ['交易时间', '证券代码', '证券名称', '买卖方向', '成交数量', '成交价格', '成交金额', '手续费', '印花税', '过户费'],
-    parse: (row: string[]) => ({
-      trade_time: row[0],
-      stock_code: row[1],
-      stock_name: row[2],
-      direction: row[3] === '卖出' ? 'sell' : 'buy',
-      quantity: parseFloat(row[4]),
-      price: parseFloat(row[5]),
-      amount: parseFloat(row[6]),
-      commission: parseFloat(row[7]) + parseFloat(row[8]) + parseFloat(row[9]),
-    })
-  },
-  '中信': {
-    columns: ['时间', '股票代码', '股票名称', '操作', '数量', '价格', '金额', '手续费'],
-    parse: (row: string[]) => ({
-      trade_time: row[0],
-      stock_code: row[1],
-      stock_name: row[2],
-      direction: row[3] === '卖出' ? 'sell' : 'buy',
-      quantity: parseFloat(row[4]),
-      price: parseFloat(row[5]),
-      amount: parseFloat(row[6]),
-      commission: parseFloat(row[7]),
-    })
-  },
-  '国泰': {
-    columns: ['成交日期', '股票代码', '股票名称', '操作方向', '成交数量', '成交价格', '成交金额', '手续费', '印花税'],
-    parse: (row: string[]) => ({
-      trade_time: row[0],
-      stock_code: row[1],
-      stock_name: row[2],
-      direction: row[3] === '卖出' ? 'sell' : 'buy',
-      quantity: parseFloat(row[4]),
-      price: parseFloat(row[5]),
-      amount: parseFloat(row[6]),
-      commission: parseFloat(row[7]) + parseFloat(row[8]),
-    })
-  },
-  '银河': {
-    columns: ['成交日期', '成交时间', '证券代码', '证券名称', '操作', '成交数量', '成交均价', '成交金额', '手续费', '印花税', '其他杂费'],
-    parse: (row: string[]) => {
-      const date = row[0]
-      const time = row[1]
-      // 转换日期格式 YYYYMMDD -> YYYY-MM-DD
-      const formattedDate = `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}`
-      return {
-        trade_time: `${formattedDate}T${time}`,
-        stock_code: row[2],
-        stock_name: row[3],
-        direction: row[4] === '卖出' ? 'sell' : 'buy',
-        quantity: parseFloat(row[5]),
-        price: parseFloat(row[6]),
-        amount: parseFloat(row[7]),
-        commission: parseFloat(row[10]) + parseFloat(row[11]) + parseFloat(row[12]),
-      }
-    }
-  },
-  '通用': {
-    columns: ['时间', '代码', '名称', '方向', '数量', '价格', '金额'],
-    parse: (row: string[]) => ({
-      trade_time: row[0],
-      stock_code: row[1],
-      stock_name: row[2],
-      direction: row[3]?.includes('卖') ? 'sell' : 'buy',
-      quantity: parseFloat(row[4]) || 0,
-      price: parseFloat(row[5]) || 0,
-      amount: parseFloat(row[6]) || 0,
-      commission: 0,
-    })
+// 标准CSV格式（银河证券）
+const STANDARD_COLUMNS = [
+  '成交日期', '成交时间', '证券代码', '证券名称', '操作', 
+  '成交数量', '成交均价', '成交金额', '手续费', '印花税'
+]
+
+const parseRow = (row: string[]) => {
+  const date = row[0]
+  const time = row[1]
+  // 转换日期格式 YYYYMMDD -> YYYY-MM-DD
+  const formattedDate = date.length === 8 
+    ? `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}`
+    : date
+  
+  return {
+    trade_time: time ? `${formattedDate}T${time}` : formattedDate,
+    stock_code: row[2],
+    stock_name: row[3],
+    direction: row[4] === '卖出' ? 'sell' : 'buy',
+    quantity: parseFloat(row[5]) || 0,
+    price: parseFloat(row[6]) || 0,
+    amount: parseFloat(row[7]) || 0,
+    commission: (parseFloat(row[8]) || 0) + (parseFloat(row[9]) || 0),
   }
 }
 
@@ -124,41 +75,36 @@ export default function ImportPage() {
     const lines = text.split('\n').filter(line => line.trim())
     if (lines.length < 2) return null
 
-    // 检测格式
+    // 解析CSV表头
     const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
     console.log('header:', header)
     
-    // 按优先级检测格式（通用放最后）
-    const priorityFormats = ['银河', '华泰', '中信', '国泰', '通用']
-    let detectedFormat = '通用'
-    let maxMatch = 0
+    // 验证是否为标准格式
+    const matchCount = STANDARD_COLUMNS.filter(col => 
+      header.includes(col)
+    ).length
     
-    for (const name of priorityFormats) {
-      const format = BROKER_FORMATS[name as keyof typeof BROKER_FORMATS]
-      const matchCount = format.columns.filter(col => 
-        header.some(h => h.includes(col) || col.includes(h))
-      ).length
-      if (matchCount > maxMatch) {
-        maxMatch = matchCount
-        detectedFormat = name
-      }
+    // 必须匹配至少8个字段
+    if (matchCount < 8) {
+      setSelectedBroker('')
+      setImportResult({ 
+        success: false, 
+        message: `CSV格式不正确。请使用标准格式，表头应为：${STANDARD_COLUMNS.join(', ')}` 
+      })
+      setUploading(false)
+      return
     }
 
-    // 如果最高匹配数低于3，使用通用格式
-    if (maxMatch < 3) {
-      detectedFormat = '通用'
-    }
-
-    setSelectedBroker(detectedFormat)
+    setSelectedBroker('标准格式')
 
     // 解析数据行
     const data = lines.slice(1, 6).map(line => {
       const values = line.split(',').map(v => v.trim().replace(/"/g, ''))
-      return BROKER_FORMATS[detectedFormat as keyof typeof BROKER_FORMATS]?.parse(values) || {}
+      return parseRow(values)
     })
 
     setPreviewData(data)
-    return { format: detectedFormat, preview: data }
+    return { format: '标准格式', preview: data }
   }
 
   // 处理文件选择
@@ -234,37 +180,27 @@ export default function ImportPage() {
         return
       }
 
-      // 检测格式
+      // 验证格式
       const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
-      // 按优先级检测格式（通用放最后）
-      const priorityFormats = ['银河', '华泰', '中信', '国泰', '通用']
-      let detectedFormat = '通用'
-      let maxMatch = 0
+      const matchCount = STANDARD_COLUMNS.filter(col => header.includes(col)).length
       
-      for (const name of priorityFormats) {
-        const format = BROKER_FORMATS[name as keyof typeof BROKER_FORMATS]
-        const matchCount = format.columns.filter(col => 
-          header.some(h => h.includes(col) || col.includes(h))
-        ).length
-        if (matchCount > maxMatch) {
-          maxMatch = matchCount
-          detectedFormat = name
-        }
-      }
-
-      // 如果最高匹配数低于3，使用通用格式
-      if (maxMatch < 3) {
-        detectedFormat = '通用'
+      if (matchCount < 8) {
+        setImportResult({ 
+          success: false, 
+          message: `CSV格式不正确。请使用标准格式，表头应为：${STANDARD_COLUMNS.join(', ')}` 
+        })
+        setUploading(false)
+        return
       }
 
       // 解析所有数据
       const trades = lines.slice(1).map(line => {
         const values = line.split(',').map(v => v.trim().replace(/"/g, ''))
-        const parsed = BROKER_FORMATS[detectedFormat as keyof typeof BROKER_FORMATS]?.parse(values)
+        const parsed = parseRow(values)
         return {
           ...parsed,
           user_id: user.id,
-          broker_name: detectedFormat,
+          broker_name: '标准格式',
         }
       }).filter(t => t.stock_code)
 
@@ -273,7 +209,7 @@ export default function ImportPage() {
         .from('broker_data')
         .insert({
           user_id: user.id,
-          broker_name: detectedFormat,
+          broker_name: '标准格式',
           raw_data: { header: header.slice(0, 10), trades: trades.slice(0, 100) }
         })
         .select()
@@ -347,15 +283,14 @@ export default function ImportPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* 券商选择说明 */}
+        {/* 标准格式说明 */}
         <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-lg font-semibold mb-4">支持的券商</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-            {Object.keys(BROKER_FORMATS).map(broker => (
-              <div key={broker} className={`p-3 border rounded ${selectedBroker === broker ? 'bg-blue-50 border-blue-500' : ''}`}>
-                {broker}
-              </div>
-            ))}
+          <h2 className="text-lg font-semibold mb-4">标准CSV格式</h2>
+          <div className="text-sm text-gray-600">
+            <p className="mb-2">请确保CSV文件包含以下表头（顺序无关）：</p>
+            <code className="block bg-gray-100 p-3 rounded text-xs overflow-x-auto">
+              {STANDARD_COLUMNS.join(', ')}
+            </code>
           </div>
         </div>
 
@@ -385,7 +320,7 @@ export default function ImportPage() {
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      {BROKER_FORMATS[selectedBroker as keyof typeof BROKER_FORMATS]?.columns.slice(0, 6).map((col: string, i: number) => (
+                      {STANDARD_COLUMNS.slice(0, 6).map((col: string, i: number) => (
                         <th key={i} className="px-3 py-2 text-left">{col}</th>
                       ))}
                     </tr>
