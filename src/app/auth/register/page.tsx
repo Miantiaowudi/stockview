@@ -18,6 +18,19 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
+    // 先检查邮箱是否已注册（通过尝试登录）
+    const { error: checkError } = await supabase.auth.signInWithPassword({
+      email,
+      password: '__CHECK_EXISTS__',
+    })
+
+    // 如果能登录，说明用户已存在
+    if (!checkError) {
+      setError('该邮箱已注册，请直接登录')
+      setLoading(false)
+      return
+    }
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
