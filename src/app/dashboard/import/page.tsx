@@ -138,10 +138,7 @@ export default function ImportPage() {
         return
       }
 
-      setImportResult({ 
-        success: true, 
-        message: `检测到格式: ${result.format}，预览成功（${previewData.length}条）` 
-      })
+      // 不显示成功提示，只通过预览表格展示数据
     } catch (error) {
       setImportResult({ success: false, message: '文件读取失败' })
     }
