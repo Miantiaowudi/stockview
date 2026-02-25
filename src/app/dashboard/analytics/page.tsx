@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { getStockNames } from '@/lib/stockApi'
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -20,6 +21,7 @@ interface Trade {
 
 interface Position {
   stock_code: string
+  stock_name: string
   quantity: number
   avg_cost: number
   total_cost: number
@@ -80,7 +82,21 @@ export default function AnalyticsPage() {
       setTrades(tradesData || [])
 
       // 计算持仓和盈亏
-      calculatePositions(tradesData || [])
+      const pos = calculatePositions(tradesData || [])
+      
+      // 获取股票名称
+      const codes = pos.map(p => p.stock_code)
+      if (codes.length > 0) {
+        const names = await getStockNames(codes)
+        const posWithNames = pos.map(p => ({
+          ...p,
+          stock_name: names[p.stock_code] || p.stock_code
+        }))
+        setPositions(posWithNames)
+      } else {
+        setPositions(pos)
+      }
+      
       calculateDailyPnL(tradesData || [])
     }
 
@@ -117,15 +133,16 @@ export default function AnalyticsPage() {
 
       if (netCost > 0) {
         // 仍在持仓
-        const quantity = Math.floor(netCost / 100) * 100 // 简化的股数计算
+        const quantity = Math.floor(netCost / 100) * 100
         const avgCost = totalBuys / (quantity || 1)
         
         positions.push({
           stock_code: code,
+          stock_name: code,
           quantity,
           avg_cost: avgCost,
           total_cost: netCost,
-          current_value: netCost, // 简化：假设当前价值等于成本
+          current_value: netCost,
           profit_loss: 0,
           profit_rate: 0
         })
@@ -137,9 +154,9 @@ export default function AnalyticsPage() {
       }
     })
 
-    setPositions(positions)
     setTotalPnL(totalPnL)
     setTotalCost(totalCost)
+    return positions
   }
 
   // 计算每日盈亏曲线
@@ -183,7 +200,7 @@ export default function AnalyticsPage() {
 
   // 饼图数据
   const pieData = positions.slice(0, 6).map(p => ({
-    name: p.stock_code,
+    name: `${p.stock_name} (${p.stock_code})`,
     value: p.total_cost
   }))
 
@@ -279,7 +296,7 @@ export default function AnalyticsPage() {
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left">股票代码</th>
+                    <th className="px-4 py-2 text-left">股票</th>
                     <th className="px-4 py-2 text-right">持仓数量</th>
                     <th className="px-4 py-2 text-right">平均成本</th>
                     <th className="px-4 py-2 text-right">总成本</th>
@@ -288,7 +305,7 @@ export default function AnalyticsPage() {
                 <tbody>
                   {positions.map((pos, i) => (
                     <tr key={i} className="border-t">
-                      <td className="px-4 py-2">{pos.stock_code}</td>
+                      <td className="px-4 py-2">{pos.stock_name} ({pos.stock_code})</td>
                       <td className="px-4 py-2 text-right">{pos.quantity}</td>
                       <td className="px-4 py-2 text-right">¥{pos.avg_cost.toFixed(2)}</td>
                       <td className="px-4 py-2 text-right">¥{pos.total_cost.toFixed(2)}</td>
