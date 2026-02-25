@@ -200,13 +200,22 @@ export default function ImportPage() {
         }
       }).filter(t => t.stock_code)
 
+      // 去重：根据股票代码、方向、数量、价格、时间
+      const seen = new Set<string>()
+      const uniqueTrades = trades.filter(t => {
+        const key = `${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${t.trade_time}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+
       // 保存原始数据到 broker_data
       const { data: brokerData, error: brokerError } = await supabase
         .from('broker_data')
         .insert({
           user_id: user.id,
           broker_name: '标准格式',
-          raw_data: { header: header.slice(0, 10), trades: trades.slice(0, 100) }
+          raw_data: { header: header.slice(0, 10), trades: uniqueTrades.slice(0, 100) }
         })
         .select()
         .single()
@@ -214,7 +223,7 @@ export default function ImportPage() {
       if (brokerError) throw brokerError
 
       // 保存归一化交易到 normalized_trades
-      const normalizedTrades = trades.map(t => ({
+      const normalizedTrades = uniqueTrades.map(t => ({
         user_id: user.id,
         stock_code: t.stock_code,
         direction: t.direction,
