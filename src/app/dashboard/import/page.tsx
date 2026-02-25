@@ -204,10 +204,12 @@ export default function ImportPage() {
       const seen = new Set<string>()
       const uniqueTrades = trades.filter(t => {
         const key = `${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${t.trade_time}`
+        console.log('dedup key:', key)
         if (seen.has(key)) return false
         seen.add(key)
         return true
       })
+
 
       // 保存原始数据到 broker_data
       const { data: brokerData, error: brokerError } = await supabase
