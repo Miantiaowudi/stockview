@@ -221,7 +221,7 @@ export default function ImportPage() {
         price: t.price,
         quantity: t.quantity,
         commission: t.commission || 0,
-        trade_time: new Date(t.trade_time).toISOString(),
+        trade_time: t.trade_time,
         broker_data_id: brokerData.id
       }))
 
