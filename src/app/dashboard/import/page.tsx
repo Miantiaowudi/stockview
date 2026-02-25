@@ -209,17 +209,17 @@ export default function ImportPage() {
       const existingKeys = new Set<string>()
       if (existingTrades) {
         for (const t of existingTrades) {
-          // 统一时间格式用于比较
-          const tradeTime = t.trade_time || ''
-          existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeTime}`)
-          existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeTime}`)
+          // 只比较日期
+          const tradeDate = t.trade_time ? t.trade_time.split('T')[0] : ''
+          existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeDate}`)
         }
       }
       console.log('existing keys:', existingKeys.size)
 
       // 去重：排除数据库中已存在的记录
       const uniqueTrades = trades.filter(t => {
-        const key = `${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${t.trade_time}`
+        const tradeDate = t.trade_time ? t.trade_time.split('T')[0] : ''
+        const key = `${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeDate}`
         if (existingKeys.has(key)) return false
         return true
       })
