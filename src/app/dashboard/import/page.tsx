@@ -209,7 +209,9 @@ export default function ImportPage() {
       const existingKeys = new Set<string>()
       if (existingTrades) {
         for (const t of existingTrades) {
-          const tradeTime = t.trade_time ? t.trade_time.split('T').join('-').slice(0, 19) : ''
+          // 统一时间格式用于比较
+          const tradeTime = t.trade_time || ''
+          existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeTime}`)
           existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeTime}`)
         }
       }
