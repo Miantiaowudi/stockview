@@ -200,15 +200,29 @@ export default function ImportPage() {
         }
       }).filter(t => t.stock_code)
 
-      // 去重：根据股票代码、方向、数量、价格、时间
-      const seen = new Set<string>()
+      // 查询数据库中已存在的交易记录（用于去重）
+      const { data: existingTrades } = await supabase
+        .from('normalized_trades')
+        .select('stock_code, direction, quantity, price, trade_time')
+        .eq('user_id', user.id)
+
+      const existingKeys = new Set<string>()
+      if (existingTrades) {
+        for (const t of existingTrades) {
+          const tradeTime = t.trade_time ? t.trade_time.split('T').join('-').slice(0, 19) : ''
+          existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeTime}`)
+        }
+      }
+      console.log('existing keys:', existingKeys.size)
+
+      // 去重：排除数据库中已存在的记录
       const uniqueTrades = trades.filter(t => {
         const key = `${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${t.trade_time}`
-        console.log('dedup key:', key)
-        if (seen.has(key)) return false
-        seen.add(key)
+        if (existingKeys.has(key)) return false
         return true
       })
+      console.log('unique trades:', uniqueTrades.length, 'from', trades.length)
+
 
 
       // 保存原始数据到 broker_data
