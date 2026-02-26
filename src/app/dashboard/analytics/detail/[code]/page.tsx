@@ -123,12 +123,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     // 准备买卖点数据
     const buyData = trades.filter(t => t.direction === 'buy').map(t => {
       const idx = klineData.findIndex(k => k.date.startsWith(t.trade_time.split('T')[0]))
-      return { value: idx >= 0 ? klineData[idx].high : null, name: 'B', idx }
+      return { value: idx >= 0 ? klineData[idx].high : null, name: 'B', idx, price: t.price, quantity: t.quantity }
     }).filter(d => d.idx >= 0)
     
     const sellData = trades.filter(t => t.direction === 'sell').map(t => {
       const idx = klineData.findIndex(k => k.date.startsWith(t.trade_time.split('T')[0]))
-      return { value: idx >= 0 ? klineData[idx].high : null, name: 'S', idx }
+      return { value: idx >= 0 ? klineData[idx].high : null, name: 'S', idx, price: t.price, quantity: t.quantity }
     }).filter(d => d.idx >= 0)
     
     return {
@@ -186,14 +186,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       legend: {
         show: true,
         top: 5,
-        data: ['MA5', 'MA10', 'MA20', 'MA60', '买入', '卖出'],
+        data: ['MA5', 'MA10', 'MA20', 'MA60'],
         selected: {
           'MA5': true,
           'MA10': true,
           'MA20': true,
-          'MA60': true,
-          '买入': true,
-          '卖出': true
+          'MA60': true
         }
       },
       tooltip: {
@@ -271,10 +269,21 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         {
           name: '买入',
           type: 'scatter',
-          data: buyData.map(d => [d.idx, klineData[d.idx].high * 1.02]),
+          data: buyData.map(d => ({
+            value: [d.idx, klineData[d.idx].high * 1.02],
+            name: 'B',
+            price: d.price,
+            quantity: d.quantity
+          })),
           symbol: 'circle',
           symbolSize: 16,
           itemStyle: { color: '#ef4444' },
+          tooltip: {
+            formatter: (params: any) => {
+              const p = params.data
+              return `买入<br/>价格: ¥${p.price.toFixed(2)}<br/>数量: ${p.quantity}`
+            }
+          },
           label: {
             show: true,
             formatter: 'B',
@@ -286,10 +295,21 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         {
           name: '卖出',
           type: 'scatter',
-          data: sellData.map(d => [d.idx, klineData[d.idx].high * 1.02]),
+          data: sellData.map(d => ({
+            value: [d.idx, klineData[d.idx].high * 1.02],
+            name: 'S',
+            price: d.price,
+            quantity: d.quantity
+          })),
           symbol: 'circle',
           symbolSize: 16,
-          itemStyle: { color: '#22c55e' },
+          itemStyle: { color: '#38bdf8' },
+          tooltip: {
+            formatter: (params: any) => {
+              const p = params.data
+              return `卖出<br/>价格: ¥${p.price.toFixed(2)}<br/>数量: ${p.quantity}`
+            }
+          },
           label: {
             show: true,
             formatter: 'S',
