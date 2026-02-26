@@ -22,8 +22,8 @@ export async function GET(request: Request) {
     const text = await response.text()
 
     // 解析返回数据
-    // 格式: var kline_day={...}
-    const match = text.match(/var kline_day=({.+})/)
+    // 格式: kline_day={...} 或 var kline_day={...}
+    const match = text.match(/(?:var )?kline_day=({.+})/)
     if (!match) {
       return NextResponse.json({ error: 'Failed to parse K-line data' }, { status: 500 })
     }
@@ -31,17 +31,21 @@ export async function GET(request: Request) {
     const data = JSON.parse(match[1])
     const stockData = data.data?.[symbol]
     
-    if (!stockData || !stockData.day) {
+    // 尝试获取qfqday或day数据
+    const klineArray = stockData?.qfqday || stockData?.day
+    
+    if (!klineArray) {
       return NextResponse.json({ error: 'No K-line data available' }, { status: 404 })
     }
 
     // 转换数据格式
-    const klineData = stockData.day.map((item: string[]) => ({
+    // 腾讯API返回格式: [日期, 开盘, 收盘, 最高, 最低, 成交量]
+    const klineData = klineArray.map((item: string[]) => ({
       time: item[0],
       open: parseFloat(item[1]),
-      high: parseFloat(item[2]),
-      low: parseFloat(item[3]),
-      close: parseFloat(item[4]),
+      close: parseFloat(item[2]),
+      high: parseFloat(item[3]),
+      low: parseFloat(item[4]),
       volume: parseInt(item[5])
     }))
 

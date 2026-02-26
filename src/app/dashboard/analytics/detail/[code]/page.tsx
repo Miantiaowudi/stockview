@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getStockNames } from '@/lib/stockApi'
-import { ComposedChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import ReactECharts from 'echarts-for-react'
 
 interface Trade {
   id: string
@@ -64,7 +64,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
             high: item.high,
             low: item.low
           }))
-          setKlineData(converted.slice(-60))
+          setKlineData(converted)
         }
       } catch (e) {
         console.error('获取K线数据失败:', e)
@@ -99,6 +99,103 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     loadData()
   }, [user, stockCode, supabase])
 
+  // 计算Y轴范围
+  const getChartOption = () => {
+    // 初始显示最后10%的数据
+    const initialStart = 90
+    const initialEnd = 100
+    
+    // 使用全部数据计算Y轴范围
+    const prices = klineData.flatMap(d => [d.low, d.high])
+    // yAxis.scale=true 自动缩放，无需手动设置min/max
+    return {
+      grid: {
+        left: '80',
+        right: '80',
+        top: '20',
+        bottom: '80'
+      },
+      dataZoom: [
+        {
+          type: 'slider',
+          show: true,
+          xAxisIndex: 0,
+          start: initialStart,
+          end: initialEnd,
+          height: 30,
+          bottom: 25,
+        },
+      ],
+      xAxis: {
+        type: 'category',
+        data: klineData.map(d => d.date),
+        axisLine: { lineStyle: { color: '#e5e7eb' } },
+        axisLabel: {
+          color: '#6b7280',
+          fontSize: 10,
+          formatter: (value: string) => {
+            const date = new Date(value)
+            const year = date.getFullYear()
+            const month = date.getMonth() + 1
+            const day = date.getDate()
+            return `${year}/${month}/${day}`
+          },
+        },
+        splitLine: { show: false }
+      },
+      yAxis: {
+        type: 'value',
+        scale: true,
+        position: 'left',
+        axisLine: { show: false },
+        axisLabel: {
+          color: '#6b7280',
+          fontSize: 10,
+          formatter: (value: number) => value.toFixed(2)
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#f3f4f6',
+            type: 'dashed'
+          }
+        }
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross' },
+        backgroundColor: 'rgba(255,255,255,0.95)',
+        borderColor: '#e5e7eb',
+        textStyle: { color: '#333', fontSize: 12 },
+        formatter: (params: any) => {
+          const data = params[0]
+          const item = klineData[data.dataIndex]
+          return `
+            <div style="padding: 4px;">
+              <div>日期: ${item.date}</div>
+              <div>开盘: ${item.open.toFixed(2)}</div>
+              <div>收盘: ${item.close.toFixed(2)}</div>
+              <div>最高: ${item.high.toFixed(2)}</div>
+              <div>最低: ${item.low.toFixed(2)}</div>
+            </div>
+          `
+        }
+      },
+      series: [
+        {
+          name: 'K线',
+          type: 'candlestick',
+          data: klineData.map(d => [d.open, d.close, d.low, d.high]),
+          itemStyle: {
+            color: '#ef4444',
+            color0: '#22c55e',
+            borderColor: '#ef4444',
+            borderColor0: '#22c55e'
+          }
+        }
+      ]
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/auth/login')
@@ -111,19 +208,11 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   const totalCommission = trades.reduce((sum, t) => sum + t.commission, 0)
   const profitLoss = totalSell - totalBuy - totalCommission
 
-  const chartData = klineData.map(item => ({
-    date: item.date,
-    open: item.open,
-    close: item.close,
-    high: item.high,
-    low: item.low,
-    isUp: item.close >= item.open,
-    range: [Math.min(item.open, item.close), Math.max(item.open, item.close)]
-  }))
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">加载中...</p></div>
   }
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -161,25 +250,21 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-lg font-semibold mb-4">K线图 (近60日)</h2>
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <ComposedChart data={chartData}>
-                <XAxis dataKey="date" tick={{fontSize: 10}} />
-                <YAxis domain={['auto', 'auto']} tick={{fontSize: 10}} />
-                <Tooltip />
-                <Bar dataKey="range" barSize={8}>
-                  {chartData.map((entry, index) => (
-                    <Cell key={index} fill={entry.isUp ? '#ef4444' : '#22c55e'} />
-                  ))}
-                </Bar>
-              </ComposedChart>
-            </ResponsiveContainer>
+          <h2 className="text-lg font-semibold mb-4">K线图</h2>
+          
+          {klineData.length > 0 ? (
+            <ReactECharts 
+              option={getChartOption()} 
+              style={{ height: '400px', width: '100%' }}
+              opts={{ renderer: 'svg' }}
+            />
           ) : (
             <div className="h-96 flex items-center justify-center text-gray-500">
               <p>加载K线数据中...</p>
             </div>
           )}
+          
+          
           <div className="flex items-center gap-4 mt-4 text-sm">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 bg-red-500"></span>
