@@ -151,6 +151,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           idx,
           price,
           type: 'T',
+          color: '#eab308',
           trades: [...tradesAtIdx.buys.map(t => ({...t, direction: '买入'})), ...tradesAtIdx.sells.map(t => ({...t, direction: '卖出'}))]
         })
       } else if (hasBuy) {
@@ -158,6 +159,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           idx,
           price,
           type: 'B',
+          color: '#ef4444',
           trades: tradesAtIdx.buys.map(t => ({...t, direction: '买入'}))
         })
       } else if (hasSell) {
@@ -165,6 +167,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           idx,
           price,
           type: 'S',
+          color: '#38bdf8',
           trades: tradesAtIdx.sells.map(t => ({...t, direction: '卖出'}))
         })
       }
@@ -331,10 +334,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           symbol: 'circle',
           symbolSize: 16,
           itemStyle: (params: any) => {
-            const type = params.data.name
-            if (type === 'T') return { color: '#eab308' }
-            if (type === 'B') return { color: '#ef4444' }
-            return { color: '#38bdf8' }
+            return { color: params.data.color }
           },
           label: {
             show: true,
