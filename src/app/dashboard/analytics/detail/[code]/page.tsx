@@ -99,7 +99,23 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     loadData()
   }, [user, stockCode, supabase])
 
-  // 计算Y轴范围
+  // 计算移动平均线
+  const calculateMA = (dayCount: number, data: KLineItem[]) => {
+    const result: (number | null)[] = []
+    for (let i = 0; i < data.length; i++) {
+      if (i < dayCount - 1) {
+        result.push(null)
+        continue
+      }
+      let sum = 0
+      for (let j = 0; j < dayCount; j++) {
+        sum += data[i - j].close
+      }
+      result.push(Number((sum / dayCount).toFixed(2)))
+    }
+    return result
+  }
+
   const getChartOption = () => {
     // 初始显示最后10%的数据
     const initialStart = 90
@@ -191,6 +207,38 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
             borderColor: '#ef4444',
             borderColor0: '#22c55e'
           }
+        },
+        {
+          name: 'MA5',
+          type: 'line',
+          data: calculateMA(5, klineData),
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { width: 1, color: '#f97316' }
+        },
+        {
+          name: 'MA10',
+          type: 'line',
+          data: calculateMA(10, klineData),
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { width: 1, color: '#8b5cf6' }
+        },
+        {
+          name: 'MA20',
+          type: 'line',
+          data: calculateMA(20, klineData),
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { width: 1, color: '#06b6d4' }
+        },
+        {
+          name: 'MA60',
+          type: 'line',
+          data: calculateMA(60, klineData),
+          smooth: true,
+          showSymbol: false,
+          lineStyle: { width: 1, color: '#ec4899' }
         }
       ]
     }
