@@ -120,16 +120,55 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     // 初始显示最后10%的数据
     const initialStart = 90
     const initialEnd = 100
-    // 准备买卖点数据
-    const buyData = trades.filter(t => t.direction === 'buy').map(t => {
-      const idx = klineData.findIndex(k => k.date.startsWith(t.trade_time.split('T')[0]))
-      return { value: idx >= 0 ? klineData[idx].high : null, name: 'B', idx, price: t.price, quantity: t.quantity }
-    }).filter(d => d.idx >= 0)
+    // 按日期分组买卖点
+    const tradeMap = new Map<number, { buys: any[], sells: any[] }>()
     
-    const sellData = trades.filter(t => t.direction === 'sell').map(t => {
+    trades.forEach(t => {
       const idx = klineData.findIndex(k => k.date.startsWith(t.trade_time.split('T')[0]))
-      return { value: idx >= 0 ? klineData[idx].high : null, name: 'S', idx, price: t.price, quantity: t.quantity }
-    }).filter(d => d.idx >= 0)
+      if (idx < 0) return
+      
+      if (!tradeMap.has(idx)) {
+        tradeMap.set(idx, { buys: [], sells: [] })
+      }
+      const entry = tradeMap.get(idx)!
+      if (t.direction === 'buy') {
+        entry.buys.push({ price: t.price, quantity: t.quantity })
+      } else {
+        entry.sells.push({ price: t.price, quantity: t.quantity })
+      }
+    })
+    
+    // 生成交易标记数据
+    const tradeMarkers: any[] = []
+    tradeMap.forEach((tradesAtIdx, idx) => {
+      const hasBuy = tradesAtIdx.buys.length > 0
+      const hasSell = tradesAtIdx.sells.length > 0
+      const price = klineData[idx].high * 1.02
+      
+      if (hasBuy && hasSell) {
+        // 当天既有买又有卖，显示T（黄色）
+        tradeMarkers.push({
+          idx,
+          price,
+          type: 'T',
+          trades: [...tradesAtIdx.buys.map(t => ({...t, direction: '买入'})), ...tradesAtIdx.sells.map(t => ({...t, direction: '卖出'}))]
+        })
+      } else if (hasBuy) {
+        tradeMarkers.push({
+          idx,
+          price,
+          type: 'B',
+          trades: tradesAtIdx.buys.map(t => ({...t, direction: '买入'}))
+        })
+      } else if (hasSell) {
+        tradeMarkers.push({
+          idx,
+          price,
+          type: 'S',
+          trades: tradesAtIdx.sells.map(t => ({...t, direction: '卖出'}))
+        })
+      }
+    })
     
     return {
       grid: {
@@ -201,9 +240,8 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         borderColor: '#e5e7eb',
         textStyle: { color: '#333', fontSize: 12 },
         formatter: (params: any) => {
-          // 检查是否是买卖点
-          const buyPoint = params.find((p: any) => p.seriesName === '买入')
-          const sellPoint = params.find((p: any) => p.seriesName === '卖出')
+          // 检查是否有交易标记
+          const tradePoint = params.find((p: any) => p.seriesName === '交易标记')
           
           // 获取K线数据的索引
           const klinePoint = params.find((p: any) => p.seriesName === 'K线')
@@ -225,14 +263,13 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           html += `<div>MA20: ${ma20 ? ma20.toFixed(2) : '-'}</div>`
           html += `<div>MA60: ${ma60 ? ma60.toFixed(2) : '-'}</div>`
           
-          // 如果有买卖点，添加买卖信息
-          if (buyPoint) {
-            const data = buyPoint.data
-            html += `<div style="margin-top: 8px; color: #ef4444;">买入 - 价格: ¥${data.price.toFixed(2)}, 数量: ${data.quantity}</div>`
-          }
-          if (sellPoint) {
-            const data = sellPoint.data
-            html += `<div style="margin-top: 4px; color: #38bdf8;">卖出 - 价格: ¥${data.price.toFixed(2)}, 数量: ${data.quantity}</div>`
+          // 如果有交易标记，添加交易信息
+          if (tradePoint) {
+            const trades = tradePoint.data.trades
+            trades.forEach((t: any) => {
+              const color = t.direction === '买入' ? '#ef4444' : '#38bdf8'
+              html += `<div style="margin-top: 4px; color: ${color};">${t.direction} - 价格: ¥${t.price.toFixed(2)}, 数量: ${t.quantity}</div>`
+            })
           }
           
           html += `</div>`
@@ -284,52 +321,24 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           lineStyle: { width: 1, color: '#ec4899' }
         },
         {
-          name: '买入',
+          name: '交易标记',
           type: 'scatter',
-          data: buyData.map(d => ({
-            value: [d.idx, klineData[d.idx].high * 1.02],
-            name: 'B',
-            price: d.price,
-            quantity: d.quantity
+          data: tradeMarkers.map(d => ({
+            value: [d.idx, d.price],
+            name: d.type,
+            trades: d.trades
           })),
           symbol: 'circle',
           symbolSize: 16,
-          itemStyle: { color: '#ef4444' },
-          tooltip: {
-            formatter: (params: any) => {
-              const p = params.data
-              return `买入<br/>价格: ¥${p.price.toFixed(2)}<br/>数量: ${p.quantity}`
-            }
+          itemStyle: (params: any) => {
+            const type = params.data.name
+            if (type === 'T') return { color: '#eab308' }
+            if (type === 'B') return { color: '#ef4444' }
+            return { color: '#38bdf8' }
           },
           label: {
             show: true,
-            formatter: 'B',
-            color: '#fff',
-            fontSize: 10,
-            fontWeight: 'bold'
-          }
-        },
-        {
-          name: '卖出',
-          type: 'scatter',
-          data: sellData.map(d => ({
-            value: [d.idx, klineData[d.idx].high * 1.02],
-            name: 'S',
-            price: d.price,
-            quantity: d.quantity
-          })),
-          symbol: 'circle',
-          symbolSize: 16,
-          itemStyle: { color: '#38bdf8' },
-          tooltip: {
-            formatter: (params: any) => {
-              const p = params.data
-              return `卖出<br/>价格: ¥${p.price.toFixed(2)}<br/>数量: ${p.quantity}`
-            }
-          },
-          label: {
-            show: true,
-            formatter: 'S',
+            formatter: (params: any) => params.data.name,
             color: '#fff',
             fontSize: 10,
             fontWeight: 'bold'
