@@ -179,9 +179,8 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       legend: {
         show: true,
         top: 5,
-        data: ['K线', 'MA5', 'MA10', 'MA20', 'MA60'],
+        data: ['MA5', 'MA10', 'MA20', 'MA60'],
         selected: {
-          'K线': true,
           'MA5': true,
           'MA10': true,
           'MA20': true,
@@ -323,7 +322,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           {klineData.length > 0 ? (
             <ReactECharts 
               option={getChartOption()} 
-              style={{ height: '400px', width: '100%' }}
+              style={{ height: '600px', width: '100%' }}
               opts={{ renderer: 'svg' }}
             />
           ) : (
