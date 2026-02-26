@@ -205,35 +205,38 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           const buyPoint = params.find((p: any) => p.seriesName === '买入')
           const sellPoint = params.find((p: any) => p.seriesName === '卖出')
           
-          if (buyPoint) {
-            const data = buyPoint.data
-            return `买入<br/>价格: ¥${data.price.toFixed(2)}<br/>数量: ${data.quantity}`
-          }
-          if (sellPoint) {
-            const data = sellPoint.data
-            return `卖出<br/>价格: ¥${data.price.toFixed(2)}<br/>数量: ${data.quantity}`
-          }
-          
-          // 默认显示K线数据
-          const dataIndex = params[0].dataIndex
+          // 获取K线数据的索引
+          const klinePoint = params.find((p: any) => p.seriesName === 'K线')
+          const dataIndex = klinePoint ? klinePoint.dataIndex : params[0].dataIndex
           const item = klineData[dataIndex]
           const ma5 = calculateMA(5, klineData)[dataIndex]
           const ma10 = calculateMA(10, klineData)[dataIndex]
           const ma20 = calculateMA(20, klineData)[dataIndex]
           const ma60 = calculateMA(60, klineData)[dataIndex]
-          return `
-            <div style="padding: 4px;">
-              <div>日期: ${item.date}</div>
-              <div>开盘: ${item.open.toFixed(2)}</div>
-              <div>收盘: ${item.close.toFixed(2)}</div>
-              <div>最高: ${item.high.toFixed(2)}</div>
-              <div>最低: ${item.low.toFixed(2)}</div>
-              <div>MA5: ${ma5 ? ma5.toFixed(2) : '-'}</div>
-              <div>MA10: ${ma10 ? ma10.toFixed(2) : '-'}</div>
-              <div>MA20: ${ma20 ? ma20.toFixed(2) : '-'}</div>
-              <div>MA60: ${ma60 ? ma60.toFixed(2) : '-'}</div>
-            </div>
-          `
+          
+          let html = `<div style="padding: 4px;">`
+          html += `<div>日期: ${item.date}</div>`
+          html += `<div>开盘: ${item.open.toFixed(2)}</div>`
+          html += `<div>收盘: ${item.close.toFixed(2)}</div>`
+          html += `<div>最高: ${item.high.toFixed(2)}</div>`
+          html += `<div>最低: ${item.low.toFixed(2)}</div>`
+          html += `<div>MA5: ${ma5 ? ma5.toFixed(2) : '-'}</div>`
+          html += `<div>MA10: ${ma10 ? ma10.toFixed(2) : '-'}</div>`
+          html += `<div>MA20: ${ma20 ? ma20.toFixed(2) : '-'}</div>`
+          html += `<div>MA60: ${ma60 ? ma60.toFixed(2) : '-'}</div>`
+          
+          // 如果有买卖点，添加买卖信息
+          if (buyPoint) {
+            const data = buyPoint.data
+            html += `<div style="margin-top: 8px; color: #ef4444;">买入 - 价格: ¥${data.price.toFixed(2)}, 数量: ${data.quantity}</div>`
+          }
+          if (sellPoint) {
+            const data = sellPoint.data
+            html += `<div style="margin-top: 4px; color: #38bdf8;">卖出 - 价格: ¥${data.price.toFixed(2)}, 数量: ${data.quantity}</div>`
+          }
+          
+          html += `</div>`
+          return html
         }
       },
       series: [
