@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getStockNames } from '@/lib/stockApi'
-import { ComposedChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts'
+import { ComposedChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 
 interface Trade {
   id: string
@@ -111,7 +111,6 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   const totalCommission = trades.reduce((sum, t) => sum + t.commission, 0)
   const profitLoss = totalSell - totalBuy - totalCommission
 
-  // 为K线图准备数据 - 显示涨跌
   const chartData = klineData.map(item => ({
     date: item.date,
     open: item.open,
@@ -119,8 +118,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     high: item.high,
     low: item.low,
     isUp: item.close >= item.open,
-    range: [Math.min(item.open, item.close), Math.max(item.open, item.close)],
-    wick: [item.low, item.high]
+    range: [Math.min(item.open, item.close), Math.max(item.open, item.close)]
   }))
 
   if (loading) {
@@ -169,18 +167,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
               <ComposedChart data={chartData}>
                 <XAxis dataKey="date" tick={{fontSize: 10}} />
                 <YAxis domain={['auto', 'auto']} tick={{fontSize: 10}} />
-                <Tooltip 
-                  formatter={(value: number, name: string) => [`¥${value}`, name]}
-                  labelFormatter={(label) => `日期: ${label}`}
-                />
-                {trades.map((trade, i) => (
-                  <ReferenceLine 
-                    key={i}
-                    segment={[{ x: trade.trade_time.split('T')[0], y: trade.price }, { x: trade.trade_time.split('T')[0], y: trade.price }]}
-                    stroke={trade.direction === 'buy' ? '#ef4444' : '#22c55e'}
-                    strokeDasharray="3 3"
-                  />
-                ))}
+                <Tooltip />
                 <Bar dataKey="range" barSize={8}>
                   {chartData.map((entry, index) => (
                     <Cell key={index} fill={entry.isUp ? '#ef4444' : '#22c55e'} />
