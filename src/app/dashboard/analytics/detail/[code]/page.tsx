@@ -201,6 +201,20 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         borderColor: '#e5e7eb',
         textStyle: { color: '#333', fontSize: 12 },
         formatter: (params: any) => {
+          // 检查是否是买卖点
+          const buyPoint = params.find((p: any) => p.seriesName === '买入')
+          const sellPoint = params.find((p: any) => p.seriesName === '卖出')
+          
+          if (buyPoint) {
+            const data = buyPoint.data
+            return `买入<br/>价格: ¥${data.price.toFixed(2)}<br/>数量: ${data.quantity}`
+          }
+          if (sellPoint) {
+            const data = sellPoint.data
+            return `卖出<br/>价格: ¥${data.price.toFixed(2)}<br/>数量: ${data.quantity}`
+          }
+          
+          // 默认显示K线数据
           const dataIndex = params[0].dataIndex
           const item = klineData[dataIndex]
           const ma5 = calculateMA(5, klineData)[dataIndex]
