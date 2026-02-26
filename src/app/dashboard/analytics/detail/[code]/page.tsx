@@ -120,10 +120,17 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     // 初始显示最后10%的数据
     const initialStart = 90
     const initialEnd = 100
+    // 准备买卖点数据
+    const buyData = trades.filter(t => t.direction === 'buy').map(t => {
+      const idx = klineData.findIndex(k => k.date.startsWith(t.trade_time.split('T')[0]))
+      return { value: idx >= 0 ? klineData[idx].high : null, name: 'B', idx }
+    }).filter(d => d.idx >= 0)
     
-    // 使用全部数据计算Y轴范围
-    const prices = klineData.flatMap(d => [d.low, d.high])
-    // yAxis.scale=true 自动缩放，无需手动设置min/max
+    const sellData = trades.filter(t => t.direction === 'sell').map(t => {
+      const idx = klineData.findIndex(k => k.date.startsWith(t.trade_time.split('T')[0]))
+      return { value: idx >= 0 ? klineData[idx].high : null, name: 'S', idx }
+    }).filter(d => d.idx >= 0)
+    
     return {
       grid: {
         left: '80',
@@ -179,12 +186,14 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       legend: {
         show: true,
         top: 5,
-        data: ['MA5', 'MA10', 'MA20', 'MA60'],
+        data: ['MA5', 'MA10', 'MA20', 'MA60', '买入', '卖出'],
         selected: {
           'MA5': true,
           'MA10': true,
           'MA20': true,
-          'MA60': true
+          'MA60': true,
+          '买入': true,
+          '卖出': true
         }
       },
       tooltip: {
@@ -258,6 +267,36 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           smooth: true,
           showSymbol: false,
           lineStyle: { width: 1, color: '#ec4899' }
+        },
+        {
+          name: '买入',
+          type: 'scatter',
+          data: buyData.map(d => [d.idx, klineData[d.idx].high * 1.02]),
+          symbol: 'circle',
+          symbolSize: 16,
+          itemStyle: { color: '#ef4444' },
+          label: {
+            show: true,
+            formatter: 'B',
+            color: '#fff',
+            fontSize: 10,
+            fontWeight: 'bold'
+          }
+        },
+        {
+          name: '卖出',
+          type: 'scatter',
+          data: sellData.map(d => [d.idx, klineData[d.idx].high * 1.02]),
+          symbol: 'circle',
+          symbolSize: 16,
+          itemStyle: { color: '#22c55e' },
+          label: {
+            show: true,
+            formatter: 'S',
+            color: '#fff',
+            fontSize: 10,
+            fontWeight: 'bold'
+          }
         }
       ]
     }
