@@ -176,6 +176,18 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           }
         }
       },
+      legend: {
+        show: true,
+        top: 5,
+        data: ['K线', 'MA5', 'MA10', 'MA20', 'MA60'],
+        selected: {
+          'K线': true,
+          'MA5': true,
+          'MA10': true,
+          'MA20': true,
+          'MA60': true
+        }
+      },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'cross' },
@@ -183,8 +195,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         borderColor: '#e5e7eb',
         textStyle: { color: '#333', fontSize: 12 },
         formatter: (params: any) => {
-          const data = params[0]
-          const item = klineData[data.dataIndex]
+          const dataIndex = params[0].dataIndex
+          const item = klineData[dataIndex]
+          const ma5 = calculateMA(5, klineData)[dataIndex]
+          const ma10 = calculateMA(10, klineData)[dataIndex]
+          const ma20 = calculateMA(20, klineData)[dataIndex]
+          const ma60 = calculateMA(60, klineData)[dataIndex]
           return `
             <div style="padding: 4px;">
               <div>日期: ${item.date}</div>
@@ -192,6 +208,10 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
               <div>收盘: ${item.close.toFixed(2)}</div>
               <div>最高: ${item.high.toFixed(2)}</div>
               <div>最低: ${item.low.toFixed(2)}</div>
+              <div>MA5: ${ma5 ? ma5.toFixed(2) : '-'}</div>
+              <div>MA10: ${ma10 ? ma10.toFixed(2) : '-'}</div>
+              <div>MA20: ${ma20 ? ma20.toFixed(2) : '-'}</div>
+              <div>MA60: ${ma60 ? ma60.toFixed(2) : '-'}</div>
             </div>
           `
         }
