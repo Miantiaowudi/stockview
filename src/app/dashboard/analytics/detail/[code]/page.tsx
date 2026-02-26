@@ -334,7 +334,14 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           symbol: 'circle',
           symbolSize: 16,
           itemStyle: (params: any) => {
-            return { color: params.data.color }
+            const data = params.data
+            if (!data) return { color: '#999' }
+            const colorMap: Record<string, string> = {
+              'T': '#eab308',
+              'B': '#ef4444',
+              'S': '#38bdf8'
+            }
+            return { color: colorMap[data.name] || '#999' }
           },
           label: {
             show: true,
