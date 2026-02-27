@@ -138,7 +138,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       }
     })
     
-    // 生成交易标记数据
+    // 生成交易标记
     const tradeMarkers: any[] = []
     tradeMap.forEach((tradesAtIdx, idx) => {
       const hasBuy = tradesAtIdx.buys.length > 0
@@ -146,32 +146,26 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       const price = klineData[idx].high * 1.02
       
       if (hasBuy && hasSell) {
-        // 当天既有买又有卖，显示T（黄色）
         tradeMarkers.push({
-          idx,
-          price,
-          type: 'T',
-          color: '#eab308',
-          trades: [...tradesAtIdx.buys.map(t => ({...t, direction: '买入'})), ...tradesAtIdx.sells.map(t => ({...t, direction: '卖出'}))]
+          idx, price, type: 'T', trades: [...tradesAtIdx.buys.map((t: any) => ({...t, direction: '买入'})), ...tradesAtIdx.sells.map((t: any) => ({...t, direction: '卖出'}))]
         })
       } else if (hasBuy) {
         tradeMarkers.push({
-          idx,
-          price,
-          type: 'B',
-          color: '#ef4444',
-          trades: tradesAtIdx.buys.map(t => ({...t, direction: '买入'}))
+          idx, price, type: 'B', trades: tradesAtIdx.buys.map((t: any) => ({...t, direction: '买入'}))
         })
       } else if (hasSell) {
         tradeMarkers.push({
-          idx,
-          price,
-          type: 'S',
-          color: '#38bdf8',
-          trades: tradesAtIdx.sells.map(t => ({...t, direction: '卖出'}))
+          idx, price, type: 'S', trades: tradesAtIdx.sells.map((t: any) => ({...t, direction: '卖出'}))
         })
       }
     })
+    
+    // 按类型分组交易标记
+    
+    // 按类型分组交易标记
+    const markersB = tradeMarkers.filter(m => m.type === 'B')
+    const markersS = tradeMarkers.filter(m => m.type === 'S')
+    const markersT = tradeMarkers.filter(m => m.type === 'T')
     
     return {
       grid: {
@@ -244,7 +238,9 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         textStyle: { color: '#333', fontSize: 12 },
         formatter: (params: any) => {
           // 检查是否有交易标记
-          const tradePoint = params.find((p: any) => p.seriesName === '交易标记')
+          const buyPoint = params.find((p: any) => p.seriesName === '买入')
+          const sellPoint = params.find((p: any) => p.seriesName === '卖出')
+          const tPoint = params.find((p: any) => p.seriesName === 'T+0')
           
           // 获取K线数据的索引
           const klinePoint = params.find((p: any) => p.seriesName === 'K线')
@@ -267,8 +263,20 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           html += `<div>MA60: ${ma60 ? ma60.toFixed(2) : '-'}</div>`
           
           // 如果有交易标记，添加交易信息
-          if (tradePoint) {
-            const trades = tradePoint.data.trades
+          if (buyPoint) {
+            const trades = buyPoint.data.trades
+            trades.forEach((t: any) => {
+              html += `<div style="margin-top: 4px; color: #ef4444;">买入 - 价格: ¥${t.price.toFixed(2)}, 数量: ${t.quantity}</div>`
+            })
+          }
+          if (sellPoint) {
+            const trades = sellPoint.data.trades
+            trades.forEach((t: any) => {
+              html += `<div style="margin-top: 4px; color: #38bdf8;">卖出 - 价格: ¥${t.price.toFixed(2)}, 数量: ${t.quantity}</div>`
+            })
+          }
+          if (tPoint) {
+            const trades = tPoint.data.trades
             trades.forEach((t: any) => {
               const color = t.direction === '买入' ? '#ef4444' : '#38bdf8'
               html += `<div style="margin-top: 4px; color: ${color};">${t.direction} - 价格: ¥${t.price.toFixed(2)}, 数量: ${t.quantity}</div>`
@@ -323,29 +331,58 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           showSymbol: false,
           lineStyle: { width: 1, color: '#ec4899' }
         },
+        // 买入标记
         {
-          name: '交易标记',
+          name: '买入',
           type: 'scatter',
-          data: tradeMarkers.map(d => ({
+          data: markersB.map(d => ({
             value: [d.idx, d.price],
-            name: d.type,
             trades: d.trades
           })),
           symbol: 'circle',
           symbolSize: 16,
-          itemStyle: (params: any) => {
-            const data = params.data
-            if (!data) return { color: '#999' }
-            const colorMap: Record<string, string> = {
-              'T': '#eab308',
-              'B': '#ef4444',
-              'S': '#38bdf8'
-            }
-            return { color: colorMap[data.name] || '#999' }
-          },
+          itemStyle: { color: '#ef4444' },
           label: {
             show: true,
-            formatter: (params: any) => params.data.name,
+            formatter: 'B',
+            color: '#fff',
+            fontSize: 10,
+            fontWeight: 'bold'
+          }
+        },
+        // 卖出标记
+        {
+          name: '卖出',
+          type: 'scatter',
+          data: markersS.map(d => ({
+            value: [d.idx, d.price],
+            trades: d.trades
+          })),
+          symbol: 'circle',
+          symbolSize: 16,
+          itemStyle: { color: '#38bdf8' },
+          label: {
+            show: true,
+            formatter: 'S',
+            color: '#fff',
+            fontSize: 10,
+            fontWeight: 'bold'
+          }
+        },
+        // T+0标记
+        {
+          name: 'T+0',
+          type: 'scatter',
+          data: markersT.map(d => ({
+            value: [d.idx, d.price],
+            trades: d.trades
+          })),
+          symbol: 'circle',
+          symbolSize: 16,
+          itemStyle: { color: '#eab308' },
+          label: {
+            show: true,
+            formatter: 'T',
             color: '#fff',
             fontSize: 10,
             fontWeight: 'bold'
