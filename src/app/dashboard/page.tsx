@@ -54,6 +54,7 @@ export default function AnalyticsPage() {
   const [totalPnL, setTotalPnL] = useState(0)
   const [totalBuy, setTotalBuy] = useState(0)
   const [totalSell, setTotalSell] = useState(0)
+  const [currentPnl, setCurrentPnl] = useState(0)
   const router = useRouter()
   const supabase = createClient()
 
@@ -215,15 +216,24 @@ export default function AnalyticsPage() {
             return pos
           })
           setCurrentPositions(currentWithPnL)
+          
+          // 计算当前持仓的总浮动盈亏
+          const totalCurrentPnl = currentWithPnL.reduce((sum, pos) => sum + (pos.floating_pnl || 0), 0)
+          setCurrentPnl(totalCurrentPnl)
+        } else {
+          // 没有当前持仓时设置当前盈亏为0
+          setCurrentPnl(0)
         }
       } catch (e) {
         console.error('获取股票名称失败:', e)
         setClearedPositions(cleared)
         setCurrentPositions(current)
+        setCurrentPnl(0)
       }
     } else {
       setClearedPositions(cleared)
       setCurrentPositions(current)
+      setCurrentPnl(0)
     }
 
     setTotalPnL(totalPnL)
@@ -343,10 +353,29 @@ export default function AnalyticsPage() {
                     )}
                   </svg>
                 </div>
-                <span className="stat-card-label">总盈亏</span>
+                <span className="stat-card-label">清仓盈亏</span>
               </div>
               <p className={`stat-card-value ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {totalPnL >= 0 ? '+' : ''}¥{totalPnL.toLocaleString()}
+              </p>
+            </div>
+
+            {/* 当前盈亏 */}
+            <div className={`stat-card stagger-item ${currentPnl >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-10 h-10 rounded-lg ${currentPnl >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
+                  <svg className={`w-5 h-5 ${currentPnl >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {currentPnl >= 0 ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                    )}
+                  </svg>
+                </div>
+                <span className="stat-card-label">当前盈亏</span>
+              </div>
+              <p className={`stat-card-value ${currentPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {currentPnl >= 0 ? '+' : ''}¥{currentPnl.toLocaleString()}
               </p>
             </div>
           </div>
