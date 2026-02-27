@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getStockNames } from '@/lib/stockApi'
+import { getStockNames, getStockPrices, StockPrice } from '@/lib/stockApi'
 
 interface Trade {
   id: string
@@ -27,6 +27,20 @@ interface ClearedPosition {
   sell_total: number
   profit_loss: number
   profit_rate: number
+  cleared_time?: string
+}
+
+interface CurrentPosition {
+  stock_code: string
+  stock_name: string
+  hold_quantity: number
+  avg_cost: number
+  total_cost: number
+  buy_total?: number
+  sell_total?: number
+  current_price?: number
+  floating_pnl?: number
+  floating_pnl_rate?: number
 }
 
 export default function AnalyticsPage() {
@@ -34,6 +48,9 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [trades, setTrades] = useState<Trade[]>([])
   const [clearedPositions, setClearedPositions] = useState<ClearedPosition[]>([])
+  const [currentPositions, setCurrentPositions] = useState<CurrentPosition[]>([])
+  const [stockPrices, setStockPrices] = useState<Record<string, StockPrice>>({})
+  const [activeTab, setActiveTab] = useState<'current' | 'cleared'>('current')
   const [totalPnL, setTotalPnL] = useState(0)
   const [totalBuy, setTotalBuy] = useState(0)
   const [totalSell, setTotalSell] = useState(0)
@@ -72,15 +89,18 @@ export default function AnalyticsPage() {
       }
 
       setTrades(tradesData || [])
-      calculateClearedPositions(tradesData || [])
+      calculatePositions(tradesData || [])
     }
 
     loadData()
   }, [user, supabase])
 
-  // 计算已清仓的个股
-  const calculateClearedPositions = async (trades: Trade[]) => {
-    const stockMap = new Map<string, { buys: {price: number, quantity: number}[], sells: {price: number, quantity: number}[] }>()
+  // 计算已清仓和当前持仓
+  const calculatePositions = async (trades: Trade[]) => {
+    const stockMap = new Map<string, { 
+      buys: {price: number, quantity: number, time: string}[], 
+      sells: {price: number, quantity: number, time: string}[] 
+    }>()
 
     trades.forEach(trade => {
       if (!stockMap.has(trade.stock_code)) {
@@ -89,13 +109,14 @@ export default function AnalyticsPage() {
       const stock = stockMap.get(trade.stock_code)!
       
       if (trade.direction === 'buy') {
-        stock.buys.push({ price: trade.price, quantity: trade.quantity })
+        stock.buys.push({ price: trade.price, quantity: trade.quantity, time: trade.trade_time })
       } else {
-        stock.sells.push({ price: trade.price, quantity: trade.quantity })
+        stock.sells.push({ price: trade.price, quantity: trade.quantity, time: trade.trade_time })
       }
     })
 
     const cleared: ClearedPosition[] = []
+    const current: CurrentPosition[] = []
     let totalPnL = 0
     let totalBuyAmount = 0
     let totalSellAmount = 0
@@ -103,17 +124,21 @@ export default function AnalyticsPage() {
     stockMap.forEach((data, code) => {
       const totalBuyQty = data.buys.reduce((sum, b) => sum + b.quantity, 0)
       const totalSellQty = data.sells.reduce((sum, s) => sum + s.quantity, 0)
+      const buyTotal = data.buys.reduce((sum, b) => sum + b.price * b.quantity, 0)
+      const sellTotal = data.sells.reduce((sum, s) => sum + s.price * s.quantity, 0)
+      const commission = trades
+        .filter(t => t.stock_code === code)
+        .reduce((sum, t) => sum + t.commission, 0)
 
-      // 只处理已清仓的（买入数量 = 卖出数量）
+      // 已清仓（买入数量 = 卖出数量）
       if (totalBuyQty > 0 && totalBuyQty === totalSellQty) {
-        const buyTotal = data.buys.reduce((sum, b) => sum + b.price * b.quantity, 0)
-        const sellTotal = data.sells.reduce((sum, s) => sum + s.price * s.quantity, 0)
-        const commission = trades
-          .filter(t => t.stock_code === code)
-          .reduce((sum, t) => sum + t.commission, 0)
-        
         const profitLoss = sellTotal - buyTotal - commission
         const profitRate = (profitLoss / buyTotal) * 100
+        
+        // 获取最后卖出时间
+        const lastSellTime = data.sells.length > 0 
+          ? data.sells.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())[0].time
+          : undefined
 
         cleared.push({
           stock_code: code,
@@ -125,31 +150,80 @@ export default function AnalyticsPage() {
           sell_avg_price: sellTotal / totalSellQty,
           sell_total: sellTotal,
           profit_loss: profitLoss,
-          profit_rate: profitRate
+          profit_rate: profitRate,
+          cleared_time: lastSellTime
         })
 
         totalPnL += profitLoss
         totalBuyAmount += buyTotal
         totalSellAmount += sellTotal
+      } 
+      // 当前持仓（买入数量 > 卖出数量）
+      else if (totalBuyQty > totalSellQty) {
+        const holdQuantity = totalBuyQty - totalSellQty
+        // avg_cost = (buy_total - sell_total - commission) / hold_quantity
+        const avgCost = (buyTotal - sellTotal - commission) / holdQuantity
+        const totalCost = avgCost * holdQuantity
+
+        current.push({
+          stock_code: code,
+          stock_name: code,
+          hold_quantity: holdQuantity,
+          avg_cost: avgCost,
+          total_cost: totalCost,
+          buy_total: buyTotal,
+          sell_total: sellTotal
+        })
       }
     })
 
     // 获取股票名称
-    const codes = cleared.map(c => c.stock_code)
-    if (codes.length > 0) {
+    const allCodes = [...cleared.map(c => c.stock_code), ...current.map(c => c.stock_code)]
+    if (allCodes.length > 0) {
       try {
-        const names = await getStockNames(codes)
+        const names = await getStockNames(allCodes)
         const clearedWithNames = cleared.map(c => ({
           ...c,
           stock_name: names[c.stock_code] || c.stock_code
         }))
+        const currentWithNames = current.map(c => ({
+          ...c,
+          stock_name: names[c.stock_code] || c.stock_code
+        }))
         setClearedPositions(clearedWithNames)
+        setCurrentPositions(currentWithNames)
+
+        // 获取当前持仓的实时价格
+        if (currentWithNames.length > 0) {
+          const prices = await getStockPrices(currentWithNames.map(c => c.stock_code))
+          setStockPrices(prices)
+          
+          // 计算浮动盈亏
+          const currentWithPnL = currentWithNames.map(pos => {
+            const price = prices[pos.stock_code]
+            if (price) {
+              const currentMarketValue = price.currentPrice * pos.hold_quantity
+              const floatingPnl = currentMarketValue - pos.total_cost
+              const floatingPnlRate = (floatingPnl / pos.total_cost) * 100
+              return {
+                ...pos,
+                current_price: price.currentPrice,
+                floating_pnl: floatingPnl,
+                floating_pnl_rate: floatingPnlRate
+              }
+            }
+            return pos
+          })
+          setCurrentPositions(currentWithPnL)
+        }
       } catch (e) {
         console.error('获取股票名称失败:', e)
         setClearedPositions(cleared)
+        setCurrentPositions(current)
       }
     } else {
       setClearedPositions(cleared)
+      setCurrentPositions(current)
     }
 
     setTotalPnL(totalPnL)
@@ -278,73 +352,182 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* 交易明细 - 已清仓个股 */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
-            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-            已清仓个股
-          </h2>
-          {clearedPositions.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clearedPositions.map((pos, i) => (
-                <Link 
-                  key={i} 
-                  href={`/dashboard/detail/${pos.stock_code}`}
-                  className={`group block p-5 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                    pos.profit_loss >= 0 
-                      ? 'border-green-200 bg-gradient-to-br from-white to-green-50 hover:border-green-400' 
-                      : 'border-red-200 bg-gradient-to-br from-white to-red-50 hover:border-red-400'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{pos.stock_name}</h3>
-                      <p className="text-sm text-slate-500">{pos.stock_code}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-xl font-bold ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {pos.profit_loss >= 0 ? '+' : ''}¥{pos.profit_loss.toFixed(2)}
-                      </p>
-                      <p className={`text-sm font-medium ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {pos.profit_rate >= 0 ? '+' : ''}{pos.profit_rate.toFixed(2)}%
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">买入</p>
-                      <p className="font-semibold text-slate-700">¥{pos.buy_avg_price.toFixed(2)} × {pos.buy_quantity}</p>
-                      <p className="text-xs text-slate-400">合计: ¥{pos.buy_total.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500 mb-1">卖出</p>
-                      <p className="font-semibold text-slate-700">¥{pos.sell_avg_price.toFixed(2)} × {pos.sell_quantity}</p>
-                      <p className="text-xs text-slate-400">合计: ¥{pos.sell_total.toFixed(2)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3 flex items-center text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span>查看详情</span>
-                    <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
-              </div>
-              <p className="text-slate-500">暂无已清仓交易记录</p>
-              <p className="text-sm text-slate-400 mt-1">买入并卖出相同数量的股票后，会显示在这里</p>
-            </div>
-          )}
+        {/* Tab切换 */}
+        <div className="mb-6">
+          <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+            <button
+              onClick={() => setActiveTab('current')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                activeTab === 'current'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              当前持仓
+            </button>
+            <button
+              onClick={() => setActiveTab('cleared')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                activeTab === 'cleared'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-600 hover:text-slate-800'
+              }`}
+            >
+              已清仓
+            </button>
+          </div>
         </div>
+
+        {/* 当前持仓 */}
+        {activeTab === 'current' && (
+          <div className="card p-6">
+            <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+              <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+              当前持仓
+            </h2>
+            {currentPositions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {currentPositions.map((pos, i) => (
+                  <Link 
+                    key={i} 
+                    href={`/dashboard/detail/${pos.stock_code}`}
+                    className={`group block p-5 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      (pos.floating_pnl || 0) >= 0 
+                        ? 'border-green-200 bg-gradient-to-br from-white to-green-50 hover:border-green-400' 
+                        : 'border-red-200 bg-gradient-to-br from-white to-red-50 hover:border-red-400'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{pos.stock_name}</h3>
+                        <p className="text-sm text-slate-500">{pos.stock_code}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-xl font-bold ${(pos.floating_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(pos.floating_pnl || 0) >= 0 ? '+' : ''}¥{(pos.floating_pnl || 0).toFixed(2)}
+                        </p>
+                        <p className={`text-sm font-medium ${(pos.floating_pnl_rate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(pos.floating_pnl_rate || 0) >= 0 ? '+' : ''}{(pos.floating_pnl_rate || 0).toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">持仓成本</p>
+                        <p className="font-semibold text-slate-700">¥{pos.avg_cost.toFixed(2)}</p>
+                        <p className="text-xs text-slate-400">合计: ¥{pos.total_cost.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">当前价格</p>
+                        <p className="font-semibold text-slate-700">¥{pos.current_price?.toFixed(2) || '--'}</p>
+                        <p className="text-xs text-slate-400">市值: ¥{(pos.current_price ? pos.current_price * pos.hold_quantity : 0).toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-slate-100">
+                      <p className="text-sm text-slate-600">
+                        <span className="text-slate-500">持仓数量:</span> {pos.hold_quantity}
+                      </p>
+                    </div>
+                    
+                    <div className="mt-2 flex items-center text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span>查看详情</span>
+                      <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <p className="text-slate-500">暂无持仓</p>
+                <p className="text-sm text-slate-400 mt-1">买入股票后，会显示在这里</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 已清仓 */}
+        {activeTab === 'cleared' && (
+          <div className="card p-6">
+            <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+              <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+              已清仓个股
+            </h2>
+            {clearedPositions.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {clearedPositions.map((pos, i) => (
+                  <Link 
+                    key={i} 
+                    href={`/dashboard/detail/${pos.stock_code}`}
+                    className={`group block p-5 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      pos.profit_loss >= 0 
+                        ? 'border-green-200 bg-gradient-to-br from-white to-green-50 hover:border-green-400' 
+                        : 'border-red-200 bg-gradient-to-br from-white to-red-50 hover:border-red-400'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{pos.stock_name}</h3>
+                        <p className="text-sm text-slate-500">{pos.stock_code}</p>
+                        {pos.cleared_time && (
+                          <p className="text-xs text-slate-400 mt-1">
+                            清仓时间: {new Date(pos.cleared_time).toLocaleDateString('zh-CN')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className={`text-xl font-bold ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {pos.profit_loss >= 0 ? '+' : ''}¥{pos.profit_loss.toFixed(2)}
+                        </p>
+                        <p className={`text-sm font-medium ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {pos.profit_rate >= 0 ? '+' : ''}{pos.profit_rate.toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">买入</p>
+                        <p className="font-semibold text-slate-700">¥{pos.buy_avg_price.toFixed(2)} × {pos.buy_quantity}</p>
+                        <p className="text-xs text-slate-400">合计: ¥{pos.buy_total.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-500 mb-1">卖出</p>
+                        <p className="font-semibold text-slate-700">¥{pos.sell_avg_price.toFixed(2)} × {pos.sell_quantity}</p>
+                        <p className="text-xs text-slate-400">合计: ¥{pos.sell_total.toFixed(2)}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 flex items-center text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span>查看详情</span>
+                      <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                </div>
+                <p className="text-slate-500">暂无已清仓交易记录</p>
+                <p className="text-sm text-slate-400 mt-1">买入并卖出相同数量的股票后，会显示在这里</p>
+              </div>
+            )}
+          </div>
+        )}
       </main>
     </div>
   )
