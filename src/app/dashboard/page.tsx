@@ -162,7 +162,7 @@ export default function AnalyticsPage() {
       else if (totalBuyQty > totalSellQty) {
         const holdQuantity = totalBuyQty - totalSellQty
         // avg_cost = (buy_total - sell_total - commission) / hold_quantity
-        const avgCost = (buyTotal - sellTotal - commission) / holdQuantity
+        const avgCost = (buyTotal - sellTotal + commission) / holdQuantity
         const totalCost = avgCost * holdQuantity
 
         current.push({
