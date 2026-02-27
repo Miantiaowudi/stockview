@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getStockNames } from '@/lib/stockApi'
 import ReactECharts from 'echarts-for-react'
+import Link from 'next/link'
 
 interface Trade {
   id: string
@@ -161,8 +162,6 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     })
     
     // 按类型分组交易标记
-    
-    // 按类型分组交易标记
     const markersB = tradeMarkers.filter(m => m.type === 'B')
     const markersS = tradeMarkers.filter(m => m.type === 'S')
     const markersT = tradeMarkers.filter(m => m.type === 'T')
@@ -183,14 +182,20 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           end: initialEnd,
           height: 30,
           bottom: 25,
+          borderRadius: 8,
+          backgroundColor: '#f8fafc',
+          fillerColor: 'rgba(59, 130, 246, 0.1)',
+          handleStyle: {
+            color: '#3b82f6'
+          }
         },
       ],
       xAxis: {
         type: 'category',
         data: klineData.map(d => d.date),
-        axisLine: { lineStyle: { color: '#e5e7eb' } },
+        axisLine: { lineStyle: { color: '#e2e8f0' } },
         axisLabel: {
-          color: '#6b7280',
+          color: '#64748b',
           fontSize: 10,
           formatter: (value: string) => {
             const date = new Date(value)
@@ -208,13 +213,13 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         position: 'left',
         axisLine: { show: false },
         axisLabel: {
-          color: '#6b7280',
+          color: '#64748b',
           fontSize: 10,
           formatter: (value: number) => value.toFixed(2)
         },
         splitLine: {
           lineStyle: {
-            color: '#f3f4f6',
+            color: '#f1f5f9',
             type: 'dashed'
           }
         }
@@ -222,6 +227,9 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       legend: {
         show: true,
         top: 5,
+        textStyle: {
+          color: '#64748b'
+        },
         data: ['MA5', 'MA10', 'MA20', 'MA60'],
         selected: {
           'MA5': true,
@@ -232,10 +240,18 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       },
       tooltip: {
         trigger: 'axis',
-        axisPointer: { type: 'cross' },
-        backgroundColor: 'rgba(255,255,255,0.95)',
-        borderColor: '#e5e7eb',
-        textStyle: { color: '#333', fontSize: 12 },
+        axisPointer: { 
+          type: 'cross',
+          crossStyle: {
+            color: '#94a3b8'
+          }
+        },
+        backgroundColor: 'rgba(255,255,255,0.98)',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        textStyle: { color: '#334155', fontSize: 12 },
+        shadowBlur: 10,
+        shadowColor: 'rgba(0,0,0,0.1)',
         formatter: (params: any) => {
           // 检查是否有交易标记
           const buyPoint = params.find((p: any) => p.seriesName === '买入')
@@ -251,35 +267,39 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           const ma20 = calculateMA(20, klineData)[dataIndex]
           const ma60 = calculateMA(60, klineData)[dataIndex]
           
-          let html = `<div style="padding: 4px;">`
-          html += `<div>日期: ${item.date}</div>`
-          html += `<div>开盘: ${item.open.toFixed(2)}</div>`
-          html += `<div>收盘: ${item.close.toFixed(2)}</div>`
-          html += `<div>最高: ${item.high.toFixed(2)}</div>`
-          html += `<div>最低: ${item.low.toFixed(2)}</div>`
-          html += `<div>MA5: ${ma5 ? ma5.toFixed(2) : '-'}</div>`
-          html += `<div>MA10: ${ma10 ? ma10.toFixed(2) : '-'}</div>`
-          html += `<div>MA20: ${ma20 ? ma20.toFixed(2) : '-'}</div>`
-          html += `<div>MA60: ${ma60 ? ma60.toFixed(2) : '-'}</div>`
+          let html = `<div style="padding: 8px; min-width: 160px;">`
+          html += `<div style="font-weight: 600; margin-bottom: 8px; color: #0f172a;">📅 ${item.date}</div>`
+          html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px;">`
+          html += `<span style="color: #64748b;">开盘:</span><span style="text-align: right; font-weight: 500;">¥${item.open.toFixed(2)}</span>`
+          html += `<span style="color: #64748b;">收盘:</span><span style="text-align: right; font-weight: 500;">¥${item.close.toFixed(2)}</span>`
+          html += `<span style="color: #64748b;">最高:</span><span style="text-align: right; font-weight: 500; color: #dc2626;">¥${item.high.toFixed(2)}</span>`
+          html += `<span style="color: #64748b;">最低:</span><span style="text-align: right; font-weight: 500; color: #22c55e;">¥${item.low.toFixed(2)}</span>`
+          html += `</div>`
+          html += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px;">`
+          html += `<span style="color: #f97316;">MA5:</span><span style="text-align: right; font-weight: 500;">${ma5 ? ma5.toFixed(2) : '-'}</span>`
+          html += `<span style="color: #8b5cf6;">MA10:</span><span style="text-align: right; font-weight: 500;">${ma10 ? ma10.toFixed(2) : '-'}</span>`
+          html += `<span style="color: #06b6d4;">MA20:</span><span style="text-align: right; font-weight: 500;">${ma20 ? ma20.toFixed(2) : '-'}</span>`
+          html += `<span style="color: #ec4899;">MA60:</span><span style="text-align: right; font-weight: 500;">${ma60 ? ma60.toFixed(2) : '-'}</span>`
+          html += `</div>`
           
           // 如果有交易标记，添加交易信息
           if (buyPoint) {
-            const trades = buyPoint.data.trades
-            trades.forEach((t: any) => {
-              html += `<div style="margin-top: 4px; color: #ef4444;">买入 - 价格: ¥${t.price.toFixed(2)}, 数量: ${t.quantity}</div>`
+            const tradesList = buyPoint.data.trades
+            tradesList.forEach((t: any) => {
+              html += `<div style="margin-top: 8px; padding: 6px; background: #fef2f2; border-radius: 4px; color: #dc2626; font-size: 11px;">📍 买入 ¥${t.price.toFixed(2)} × ${t.quantity}</div>`
             })
           }
           if (sellPoint) {
-            const trades = sellPoint.data.trades
-            trades.forEach((t: any) => {
-              html += `<div style="margin-top: 4px; color: #38bdf8;">卖出 - 价格: ¥${t.price.toFixed(2)}, 数量: ${t.quantity}</div>`
+            const tradesList = sellPoint.data.trades
+            tradesList.forEach((t: any) => {
+              html += `<div style="margin-top: 4px; padding: 6px; background: #f0fdf4; border-radius: 4px; color: #16a34a; font-size: 11px;">📍 卖出 ¥${t.price.toFixed(2)} × ${t.quantity}</div>`
             })
           }
           if (tPoint) {
-            const trades = tPoint.data.trades
-            trades.forEach((t: any) => {
-              const color = t.direction === '买入' ? '#ef4444' : '#38bdf8'
-              html += `<div style="margin-top: 4px; color: ${color};">${t.direction} - 价格: ¥${t.price.toFixed(2)}, 数量: ${t.quantity}</div>`
+            const tradesList = tPoint.data.trades
+            tradesList.forEach((t: any) => {
+              const color = t.direction === '买入' ? '#dc2626' : '#16a34a'
+              html += `<div style="margin-top: 4px; padding: 6px; background: #fffbeb; border-radius: 4px; color: ${color}; font-size: 11px;">📍 ${t.direction} ¥${t.price.toFixed(2)} × ${t.quantity}</div>`
             })
           }
           
@@ -305,7 +325,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           data: calculateMA(5, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1, color: '#f97316' }
+          lineStyle: { width: 1.5, color: '#f97316' }
         },
         {
           name: 'MA10',
@@ -313,7 +333,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           data: calculateMA(10, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1, color: '#8b5cf6' }
+          lineStyle: { width: 1.5, color: '#8b5cf6' }
         },
         {
           name: 'MA20',
@@ -321,7 +341,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           data: calculateMA(20, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1, color: '#06b6d4' }
+          lineStyle: { width: 1.5, color: '#06b6d4' }
         },
         {
           name: 'MA60',
@@ -329,7 +349,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           data: calculateMA(60, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1, color: '#ec4899' }
+          lineStyle: { width: 1.5, color: '#ec4899' }
         },
         // 买入标记
         {
@@ -340,8 +360,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
             trades: d.trades
           })),
           symbol: 'circle',
-          symbolSize: 16,
-          itemStyle: { color: '#ef4444' },
+          symbolSize: 18,
+          itemStyle: { 
+            color: '#ef4444',
+            shadowBlur: 4,
+            shadowColor: 'rgba(239, 68, 68, 0.4)'
+          },
           label: {
             show: true,
             formatter: 'B',
@@ -359,8 +383,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
             trades: d.trades
           })),
           symbol: 'circle',
-          symbolSize: 16,
-          itemStyle: { color: '#38bdf8' },
+          symbolSize: 18,
+          itemStyle: { 
+            color: '#22c55e',
+            shadowBlur: 4,
+            shadowColor: 'rgba(34, 197, 94, 0.4)'
+          },
           label: {
             show: true,
             formatter: 'S',
@@ -378,8 +406,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
             trades: d.trades
           })),
           symbol: 'circle',
-          symbolSize: 16,
-          itemStyle: { color: '#eab308' },
+          symbolSize: 18,
+          itemStyle: { 
+            color: '#f59e0b',
+            shadowBlur: 4,
+            shadowColor: 'rgba(245, 158, 11, 0.4)'
+          },
           label: {
             show: true,
             formatter: 'T',
@@ -406,108 +438,208 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
 
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><p className="text-gray-500">加载中...</p></div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500">加载中...</p>
+        </div>
+      </div>
+    )
   }
 
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">{stockName} ({stockCode})</h1>
-          <div className="flex items-center gap-4">
-            <a href="/dashboard/analytics" className="text-blue-600 hover:underline">返回</a>
-            <span className="text-gray-600">{user?.email}</span>
-            <button onClick={handleLogout} className="text-sm text-blue-600 hover:underline">退出</button>
+    <div className="min-h-screen bg-slate-50 page-enter">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/dashboard/analytics"
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </Link>
+              <div>
+                <h1 className="text-lg font-bold text-slate-800">{stockName} ({stockCode})</h1>
+                <p className="text-xs text-slate-500">股票交易明细</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link 
+                href="/dashboard/analytics" 
+                className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              >
+                返回列表
+              </Link>
+              <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
+              <button 
+                onClick={handleLogout} 
+                className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+              >
+                退出
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">买入总额</h3>
-            <p className="text-2xl font-bold">¥{totalBuy.toLocaleString()}</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="stat-card stagger-item">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="stat-card-label">买入总额</span>
+            </div>
+            <p className="stat-card-value">¥{totalBuy.toLocaleString()}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">卖出总额</h3>
-            <p className="text-2xl font-bold">¥{totalSell.toLocaleString()}</p>
+
+          <div className="stat-card stagger-item">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <span className="stat-card-label">卖出总额</span>
+            </div>
+            <p className="stat-card-value">¥{totalSell.toLocaleString()}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">手续费</h3>
-            <p className="text-2xl font-bold">¥{totalCommission.toFixed(2)}</p>
+
+          <div className="stat-card stagger-item">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                </svg>
+              </div>
+              <span className="stat-card-label">手续费</span>
+            </div>
+            <p className="stat-card-value text-slate-700">¥{totalCommission.toFixed(2)}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">盈亏</h3>
-            <p className={`text-2xl font-bold ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+
+          <div className={`stat-card stagger-item ${profitLoss >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`w-10 h-10 rounded-lg ${profitLoss >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
+                <svg className={`w-5 h-5 ${profitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {profitLoss >= 0 ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                  )}
+                </svg>
+              </div>
+              <span className="stat-card-label">盈亏</span>
+            </div>
+            <p className={`stat-card-value ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {profitLoss >= 0 ? '+' : ''}¥{profitLoss.toFixed(2)}
             </p>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-lg font-semibold mb-4">K线图</h2>
+        {/* K线图 */}
+        <div className="card p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+              <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+              K线图
+            </h2>
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-red-500"></span>
+                <span className="text-slate-600">上涨</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-green-500"></span>
+                <span className="text-slate-600">下跌</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                <span className="text-slate-600">买入点</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                <span className="text-slate-600">卖出点</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-amber-500"></span>
+                <span className="text-slate-600">T+0</span>
+              </div>
+            </div>
+          </div>
           
           {klineData.length > 0 ? (
             <ReactECharts 
               option={getChartOption()} 
-              style={{ height: '600px', width: '100%' }}
+              style={{ height: '550px', width: '100%' }}
               opts={{ renderer: 'svg' }}
             />
           ) : (
-            <div className="h-96 flex items-center justify-center text-gray-500">
-              <p>加载K线数据中...</p>
+            <div className="h-96 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p className="text-slate-500">加载K线数据中...</p>
+              </div>
             </div>
           )}
-          
-          
-          <div className="flex items-center gap-4 mt-4 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-red-500"></span>
-              <span>上涨</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 bg-green-500"></span>
-              <span>下跌</span>
-            </div>
-          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">成交明细</h2>
+        {/* 成交明细 */}
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+            成交明细
+          </h2>
           {trades.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50">
+            <div className="table-container">
+              <table className="table">
+                <thead>
                   <tr>
-                    <th className="px-4 py-2 text-left">时间</th>
-                    <th className="px-4 py-2 text-left">方向</th>
-                    <th className="px-4 py-2 text-right">价格</th>
-                    <th className="px-4 py-2 text-right">数量</th>
-                    <th className="px-4 py-2 text-right">金额</th>
-                    <th className="px-4 py-2 text-right">手续费</th>
+                    <th className="px-4 py-3 text-left">时间</th>
+                    <th className="px-4 py-3 text-left">方向</th>
+                    <th className="px-4 py-3 text-right">价格</th>
+                    <th className="px-4 py-3 text-right">数量</th>
+                    <th className="px-4 py-3 text-right">金额</th>
+                    <th className="px-4 py-3 text-right">手续费</th>
                   </tr>
                 </thead>
                 <tbody>
                   {trades.map((trade, i) => (
-                    <tr key={i} className="border-t">
-                      <td className="px-4 py-2">{new Date(trade.trade_time).toLocaleString('zh-CN')}</td>
-                      <td className="px-4 py-2">
-                        <span className={`px-2 py-1 rounded text-xs ${trade.direction === 'buy' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                    <tr key={i} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-600 font-mono text-xs">
+                        {new Date(trade.trade_time).toLocaleString('zh-CN')}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`badge ${trade.direction === 'buy' ? 'badge-buy' : 'badge-sell'}`}>
                           {trade.direction === 'buy' ? '买入' : '卖出'}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-right">¥{trade.price.toFixed(2)}</td>
-                      <td className="px-4 py-2 text-right">{trade.quantity}</td>
-                      <td className="px-4 py-2 text-right">¥{(trade.price * trade.quantity).toFixed(2)}</td>
-                      <td className="px-4 py-2 text-right">¥{trade.commission.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right font-medium">¥{trade.price.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right text-slate-600">{trade.quantity}</td>
+                      <td className="px-4 py-3 text-right font-medium">¥{(trade.price * trade.quantity).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right text-slate-500">¥{trade.commission.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-10">暂无成交记录</p>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </div>
+              <p className="text-slate-500">暂无成交记录</p>
+            </div>
           )}
         </div>
       </main>

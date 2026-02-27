@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth/login')
-      } else {
+      } {
         setUser(user)
       }
       setLoading(false)
@@ -165,93 +165,181 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">加载中...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500">加载中...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">StockView 账户分析</h1>
-          <div className="flex items-center gap-4">
-            <a href="/dashboard" className="text-blue-600 hover:underline">返回</a>
-            <span className="text-gray-600">{user?.email}</span>
-            <button onClick={handleLogout} className="text-sm text-blue-600 hover:underline">
-              退出
-            </button>
+    <div className="min-h-screen bg-slate-50 page-enter">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <h1 className="text-lg font-bold text-slate-800">StockView 账户分析</h1>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link 
+                href="/dashboard" 
+                className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              >
+                返回主页
+              </Link>
+              <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
+              <button 
+                onClick={handleLogout} 
+                className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+              >
+                退出
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 总体概览 */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">总买入</h3>
-            <p className="text-2xl font-bold">¥{totalBuy.toLocaleString()}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">总卖出</h3>
-            <p className="text-2xl font-bold">¥{totalSell.toLocaleString()}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">手续费合计</h3>
-            <p className="text-2xl font-bold">¥{(totalSell - totalBuy - totalPnL).toFixed(2)}</p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-gray-500 text-sm">总盈亏</h3>
-            <p className={`text-2xl font-bold ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {totalPnL >= 0 ? '+' : ''}¥{totalPnL.toLocaleString()}
-            </p>
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+            总体概览
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 总买入 */}
+            <div className="stat-card stagger-item">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <span className="stat-card-label">总买入</span>
+              </div>
+              <p className="stat-card-value">¥{totalBuy.toLocaleString()}</p>
+            </div>
+
+            {/* 总卖出 */}
+            <div className="stat-card stagger-item">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <span className="stat-card-label">总卖出</span>
+              </div>
+              <p className="stat-card-value">¥{totalSell.toLocaleString()}</p>
+            </div>
+
+            {/* 手续费合计 */}
+            <div className="stat-card stagger-item">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                  </svg>
+                </div>
+                <span className="stat-card-label">手续费合计</span>
+              </div>
+              <p className="stat-card-value text-slate-700">¥{(totalSell - totalBuy - totalPnL).toFixed(2)}</p>
+            </div>
+
+            {/* 总盈亏 */}
+            <div className={`stat-card stagger-item ${totalPnL >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+              <div className="flex items-center gap-3 mb-2">
+                <div className={`w-10 h-10 rounded-lg ${totalPnL >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
+                  <svg className={`w-5 h-5 ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {totalPnL >= 0 ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                    )}
+                  </svg>
+                </div>
+                <span className="stat-card-label">总盈亏</span>
+              </div>
+              <p className={`stat-card-value ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {totalPnL >= 0 ? '+' : ''}¥{totalPnL.toLocaleString()}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* 交易明细 - 已清仓个股 */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">已清仓个股</h2>
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+            已清仓个股
+          </h2>
           {clearedPositions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {clearedPositions.map((pos, i) => (
                 <Link 
                   key={i} 
                   href={`/dashboard/analytics/detail/${pos.stock_code}`}
-                  className={`block border rounded-lg p-4 transition hover:shadow-md ${pos.profit_loss >= 0 ? 'border-green-200 bg-green-50 hover:border-green-400' : 'border-red-200 bg-red-50 hover:border-red-400'}`}
+                  className={`group block p-5 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                    pos.profit_loss >= 0 
+                      ? 'border-green-200 bg-gradient-to-br from-white to-green-50 hover:border-green-400' 
+                      : 'border-red-200 bg-gradient-to-br from-white to-red-50 hover:border-red-400'
+                  }`}
                 >
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="font-semibold text-lg">{pos.stock_name}</h3>
-                      <p className="text-sm text-gray-500">{pos.stock_code}</p>
+                      <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{pos.stock_name}</h3>
+                      <p className="text-sm text-slate-500">{pos.stock_code}</p>
                     </div>
                     <div className="text-right">
                       <p className={`text-xl font-bold ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {pos.profit_loss >= 0 ? '+' : ''}¥{pos.profit_loss.toFixed(2)}
                       </p>
-                      <p className={`text-sm ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className={`text-sm font-medium ${pos.profit_loss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {pos.profit_rate >= 0 ? '+' : ''}{pos.profit_rate.toFixed(2)}%
                       </p>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
                     <div>
-                      <p className="text-gray-500">买入</p>
-                      <p className="font-medium">¥{pos.buy_avg_price.toFixed(2)} × {pos.buy_quantity}</p>
-                      <p className="text-gray-500 text-xs">合计: ¥{pos.buy_total.toFixed(2)}</p>
+                      <p className="text-xs text-slate-500 mb-1">买入</p>
+                      <p className="font-semibold text-slate-700">¥{pos.buy_avg_price.toFixed(2)} × {pos.buy_quantity}</p>
+                      <p className="text-xs text-slate-400">合计: ¥{pos.buy_total.toFixed(2)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500">卖出</p>
-                      <p className="font-medium">¥{pos.sell_avg_price.toFixed(2)} × {pos.sell_quantity}</p>
-                      <p className="text-gray-500 text-xs">合计: ¥{pos.sell_total.toFixed(2)}</p>
+                      <p className="text-xs text-slate-500 mb-1">卖出</p>
+                      <p className="font-semibold text-slate-700">¥{pos.sell_avg_price.toFixed(2)} × {pos.sell_quantity}</p>
+                      <p className="text-xs text-slate-400">合计: ¥{pos.sell_total.toFixed(2)}</p>
                     </div>
+                  </div>
+                  
+                  <div className="mt-3 flex items-center text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span>查看详情</span>
+                    <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
                   </div>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-10">暂无已清仓交易记录</p>
+            <div className="text-center py-16">
+              <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+              </div>
+              <p className="text-slate-500">暂无已清仓交易记录</p>
+              <p className="text-sm text-slate-400 mt-1">买入并卖出相同数量的股票后，会显示在这里</p>
+            </div>
           )}
         </div>
       </main>
