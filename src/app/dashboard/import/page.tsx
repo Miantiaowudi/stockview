@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 // 标准CSV格式（银河证券）
 const STANDARD_COLUMNS = [
@@ -284,109 +285,251 @@ export default function ImportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500">加载中...</p>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500">加载中...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-bold">StockView 数据导入</h1>
-          <div className="flex items-center gap-4">
-            <a href="/dashboard" className="text-blue-600 hover:underline">返回看板</a>
-            <span className="text-gray-600">{user?.email}</span>
-            <button onClick={handleLogout} className="text-sm text-blue-600 hover:underline">
-              退出
-            </button>
+    <div className="min-h-screen bg-slate-50 page-enter">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <h1 className="text-lg font-bold text-slate-800">StockView 数据导入</h1>
+              </Link>
+            </div>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link 
+                href="/dashboard" 
+                className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              >
+                返回看板
+              </Link>
+              <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
+              <button 
+                onClick={handleLogout} 
+                className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+              >
+                退出
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        {/* 标准格式说明 */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-lg font-semibold mb-4">标准CSV格式</h2>
-          <div className="text-sm text-gray-600">
-            <p className="mb-2">请确保CSV文件包含以下表头（顺序无关）：</p>
-            <code className="block bg-gray-100 p-3 rounded text-xs overflow-x-auto">
-              {STANDARD_COLUMNS.join(', ')}
-            </code>
-          </div>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - Import Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* File Upload Card */}
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+                <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                导入数据
+              </h2>
+              
+              {/* File Input */}
+              <div className="mb-6">
+                <label className="block">
+                  <span className="sr-only">选择CSV文件</span>
+                  <div className="flex items-center justify-center w-full">
+                    <label htmlFor="file-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 group">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <div className="w-12 h-12 mb-3 rounded-full bg-slate-100 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+                          <svg className="w-6 h-6 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        <p className="mb-1 text-sm text-slate-600">
+                          <span className="font-semibold text-blue-600">点击上传</span> 或拖拽文件
+                        </p>
+                        <p className="text-xs text-slate-400">支持 CSV 格式文件</p>
+                      </div>
+                      <input
+                        id="file-upload"
+                        type="file"
+                        ref={fileInputRef}
+                        accept=".csv"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                    </label>
+                  </div>
+                </label>
+              </div>
 
-        {/* 文件上传 */}
-        <div className="bg-white p-6 rounded-lg shadow mb-6">
-          <h2 className="text-lg font-semibold mb-4">导入数据</h2>
-          
-          <input
-            type="file"
-            ref={fileInputRef}
-            accept=".csv"
-            onChange={handleFileChange}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mb-4"
-          />
+              {/* Import Result Message */}
+              {importResult && (
+                <div className={`p-4 rounded-lg mb-6 ${importResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <div className="flex items-center gap-3">
+                    {importResult.success ? (
+                      <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                    <p className={`text-sm ${importResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {importResult.message}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-          {importResult && (
-            <div className={`p-3 rounded mb-4 ${importResult.success ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
-              {importResult.message}
-            </div>
-          )}
-
-          {/* 预览数据 */}
-          {previewData.length > 0 && (
-            <div className="mb-4">
-              <h3 className="font-medium mb-2">预览（前5条）</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      {STANDARD_COLUMNS.map((col: string, i: number) => (
-                        <th key={i} className="px-3 py-2 text-left">{col}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewData.map((row: any, i: number) => (
-                      <tr key={i} className="border-t">
-                        {row.map((val: string, j: number) => (
-                          <td key={j} className="px-3 py-2">
-                            {j === 4 && typeof val === 'string' ? (
-                              <span className={val.includes('买') ? 'text-green-600' : 'text-red-600'}>
-                                {val}
-                              </span>
-                            ) : (
-                              val
-                            )}
-                          </td>
+              {/* Preview Data */}
+              {previewData.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="font-medium text-slate-700 mb-3 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                    预览（前5条）
+                  </h3>
+                  <div className="table-container">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          {STANDARD_COLUMNS.map((col: string, i: number) => (
+                            <th key={i} className="text-xs">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {previewData.map((row: any, i: number) => (
+                          <tr key={i}>
+                            {row.map((val: string, j: number) => (
+                              <td key={j} className="text-xs">
+                                {j === 4 && typeof val === 'string' ? (
+                                  <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${val.includes('买') ? 'badge-buy' : 'badge-sell'}`}>
+                                    {val}
+                                  </span>
+                                ) : (
+                                  val
+                                )}
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Import Button */}
+              <button
+                onClick={handleImport}
+                disabled={uploading || previewData.length === 0}
+                className="w-full sm:w-auto py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+              >
+                {uploading ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    导入中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    确认导入
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Right Column - Instructions */}
+          <div className="space-y-6">
+            {/* Format Guide Card */}
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                CSV格式说明
+              </h2>
+              <div className="text-sm text-slate-600">
+                <p className="mb-3">请确保CSV文件包含以下表头（顺序无关）：</p>
+                <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                  <code className="text-xs text-slate-600 break-all">
+                    {STANDARD_COLUMNS.join(', ')}
+                  </code>
+                </div>
               </div>
             </div>
-          )}
 
-          <button
-            onClick={handleImport}
-            disabled={uploading || previewData.length === 0}
-            className="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {uploading ? '导入中...' : '确认导入'}
-          </button>
-        </div>
+            {/* Instructions Card */}
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                导入说明
+              </h2>
+              <ul className="text-sm text-slate-600 space-y-3">
+                <li className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">1</span>
+                  <span>从券商客户端导出CSV格式的交割单</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">2</span>
+                  <span>确保CSV文件包含标准表头</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">3</span>
+                  <span>导入后支持自动去重，相同记录不会重复导入</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">4</span>
+                  <span>导入完成后可在&quot;账户分析&quot;查看统计数据</span>
+                </li>
+              </ul>
+            </div>
 
-        {/* 导入说明 */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">导入说明</h2>
-          <ul className="text-sm text-gray-600 space-y-2">
-            <li>1. 从券商客户端导出CSV格式的交割单</li>
-            <li>2. 确保CSV文件包含标准表头</li>
-            <li>3. 导入后可在"账户分析"查看统计数据</li>
-          </ul>
+            {/* Quick Links Card */}
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                快速导航
+              </h2>
+              <div className="space-y-2">
+                <Link 
+                  href="/dashboard" 
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors text-slate-600 hover:text-blue-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  <span className="text-sm font-medium">返回看板</span>
+                </Link>
+                <Link 
+                  href="/dashboard/analytics" 
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors text-slate-600 hover:text-blue-600"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span className="text-sm font-medium">账户分析</span>
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     </div>
