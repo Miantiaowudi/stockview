@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth/login')
-      } {
+      } else {
         setUser(user)
       }
       setLoading(false)
@@ -289,7 +289,7 @@ export default function AnalyticsPage() {
               {clearedPositions.map((pos, i) => (
                 <Link 
                   key={i} 
-                  href={`/dashboard/analytics/detail/${pos.stock_code}`}
+                  href={`/dashboard/detail/${pos.stock_code}`}
                   className={`group block p-5 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
                     pos.profit_loss >= 0 
                       ? 'border-green-200 bg-gradient-to-br from-white to-green-50 hover:border-green-400' 

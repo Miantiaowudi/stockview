@@ -456,7 +456,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <Link 
-                href="/dashboard/analytics"
+                href="/dashboard"
                 className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
               >
                 <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -470,7 +470,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
               <Link 
-                href="/dashboard/analytics" 
+                href="/dashboard" 
                 className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
               >
                 返回列表
