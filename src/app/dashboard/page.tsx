@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -58,6 +58,17 @@ export default function AnalyticsPage() {
   const [totalBuy, setTotalBuy] = useState(0)
   const [totalSell, setTotalSell] = useState(0)
   const [currentPnl, setCurrentPnl] = useState(0)
+  
+  // Current positions filter/sort state
+  const [currentSearchTerm, setCurrentSearchTerm] = useState('')
+  const [currentFilter, setCurrentFilter] = useState<'all' | 'profit' | 'loss'>('all')
+  const [currentSort, setCurrentSort] = useState<'default' | 'pnl-asc' | 'pnl-desc'>('default')
+
+  // Cleared positions filter/sort state
+  const [clearedSearchTerm, setClearedSearchTerm] = useState('')
+  const [clearedFilter, setClearedFilter] = useState<'all' | 'profit' | 'loss'>('all')
+  const [clearedSort, setClearedSort] = useState<'default' | 'pnl-asc' | 'pnl-desc' | 'time-asc' | 'time-desc'>('default')
+  
   const router = useRouter()
   const supabase = createClient()
 
@@ -261,6 +272,70 @@ export default function AnalyticsPage() {
     setTotalSell(totalSellAmount)
   }
 
+  // Filter and sort current positions
+  const filteredCurrentPositions = useMemo(() => {
+    let result = [...currentPositions]
+
+    // Search filter
+    if (currentSearchTerm) {
+      const term = currentSearchTerm.toLowerCase()
+      result = result.filter(pos => 
+        pos.stock_name.toLowerCase().includes(term) || 
+        pos.stock_code.toLowerCase().includes(term)
+      )
+    }
+
+    // Profit/Loss filter
+    if (currentFilter === 'profit') {
+      result = result.filter(pos => (pos.floating_pnl || 0) >= 0)
+    } else if (currentFilter === 'loss') {
+      result = result.filter(pos => (pos.floating_pnl || 0) < 0)
+    }
+
+    // Sort
+    if (currentSort === 'pnl-asc') {
+      result.sort((a, b) => (a.floating_pnl || 0) - (b.floating_pnl || 0))
+    } else if (currentSort === 'pnl-desc') {
+      result.sort((a, b) => (b.floating_pnl || 0) - (a.floating_pnl || 0))
+    }
+
+    return result
+  }, [currentPositions, currentSearchTerm, currentFilter, currentSort])
+
+  // Filter and sort cleared positions
+  const filteredClearedPositions = useMemo(() => {
+    let result = [...clearedPositions]
+
+    // Search filter
+    if (clearedSearchTerm) {
+      const term = clearedSearchTerm.toLowerCase()
+      result = result.filter(pos => 
+        pos.stock_name.toLowerCase().includes(term) || 
+        pos.stock_code.toLowerCase().includes(term)
+      )
+    }
+
+    // Profit/Loss filter
+    if (clearedFilter === 'profit') {
+      result = result.filter(pos => pos.profit_loss >= 0)
+    } else if (clearedFilter === 'loss') {
+      result = result.filter(pos => pos.profit_loss < 0)
+    }
+
+    // Sort
+    if (clearedSort === 'pnl-asc') {
+      result.sort((a, b) => a.profit_loss - b.profit_loss)
+    } else if (clearedSort === 'pnl-desc') {
+      result.sort((a, b) => b.profit_loss - a.profit_loss)
+    } else if (clearedSort === 'time-asc') {
+      result.sort((a, b) => new Date(a.cleared_time || 0).getTime() - new Date(b.cleared_time || 0).getTime())
+    } else if (clearedSort === 'time-desc') {
+      result.sort((a, b) => new Date(b.cleared_time || 0).getTime() - new Date(a.cleared_time || 0).getTime())
+    }
+
+    return result
+  }, [clearedPositions, clearedSearchTerm, clearedFilter, clearedSort])
+
   // 登出
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -430,13 +505,66 @@ export default function AnalyticsPage() {
         {/* 当前持仓 */}
         {activeTab === 'current' && (
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
               当前持仓
             </h2>
-            {currentPositions.length > 0 ? (
+            {/* Search/Filter/Sort Controls */}
+            <div className="mb-6 flex flex-wrap gap-3 items-center">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[200px]">
+                <input
+                  type="text"
+                  placeholder="搜索股票名称/代码..."
+                  value={currentSearchTerm}
+                  onChange={(e) => setCurrentSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              {/* Filter */}
+              <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
+                <button
+                  onClick={() => setCurrentFilter('all')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    currentFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  全部
+                </button>
+                <button
+                  onClick={() => setCurrentFilter('profit')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    currentFilter === 'profit' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  盈利
+                </button>
+                <button
+                  onClick={() => setCurrentFilter('loss')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    currentFilter === 'loss' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  亏损
+                </button>
+              </div>
+              {/* Sort */}
+              <select
+                value={currentSort}
+                onChange={(e) => setCurrentSort(e.target.value as any)}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              >
+                <option value="default">默认排序</option>
+                <option value="pnl-asc">盈亏 ↑ 升序</option>
+                <option value="pnl-desc">盈亏 ↓ 降序</option>
+              </select>
+            </div>
+            {filteredCurrentPositions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentPositions.map((pos, i) => (
+                {filteredCurrentPositions.map((pos, i) => (
                   <Link 
                     key={i} 
                     href={`/dashboard/detail/${pos.stock_code}`}
@@ -473,7 +601,7 @@ export default function AnalyticsPage() {
                         <p className="font-semibold text-slate-700">¥{pos.current_price?.toFixed(2) || '--'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500 mb-1">持仓市值</p>
+                        <p className="text-xs text-slate-500 mb-1">持仓市值（股数）</p>
                         <p className="font-semibold text-slate-700">¥{((pos.current_price || 0) * pos.hold_quantity).toFixed(2)} ({pos.hold_quantity})</p>
                       </div>
                       <div>
@@ -510,13 +638,68 @@ export default function AnalyticsPage() {
         {/* 已清仓 */}
         {activeTab === 'cleared' && (
           <div className="card p-6">
-            <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
               <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
               已清仓个股
             </h2>
-            {clearedPositions.length > 0 ? (
+            {/* Search/Filter/Sort Controls */}
+            <div className="mb-6 flex flex-wrap gap-3 items-center">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[200px]">
+                <input
+                  type="text"
+                  placeholder="搜索股票名称/代码..."
+                  value={clearedSearchTerm}
+                  onChange={(e) => setClearedSearchTerm(e.target.value)}
+                  className="w-full px-4 py-2 pl-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              {/* Filter */}
+              <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
+                <button
+                  onClick={() => setClearedFilter('all')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    clearedFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  全部
+                </button>
+                <button
+                  onClick={() => setClearedFilter('profit')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    clearedFilter === 'profit' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  盈利
+                </button>
+                <button
+                  onClick={() => setClearedFilter('loss')}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    clearedFilter === 'loss' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  }`}
+                >
+                  亏损
+                </button>
+              </div>
+              {/* Sort */}
+              <select
+                value={clearedSort}
+                onChange={(e) => setClearedSort(e.target.value as any)}
+                className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+              >
+                <option value="default">默认排序</option>
+                <option value="pnl-asc">盈亏 ↑ 升序</option>
+                <option value="pnl-desc">盈亏 ↓ 降序</option>
+                <option value="time-asc">时间 ↑ 早到晚</option>
+                <option value="time-desc">时间 ↓ 晚到早</option>
+              </select>
+            </div>
+            {filteredClearedPositions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {clearedPositions.map((pos, i) => (
+                {filteredClearedPositions.map((pos, i) => (
                   <Link 
                     key={i} 
                     href={`/dashboard/detail/${pos.stock_code}`}
