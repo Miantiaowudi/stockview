@@ -451,8 +451,9 @@ export default function AnalyticsPage() {
                         <h3 className="font-bold text-lg text-slate-800 group-hover:text-blue-600 transition-colors">{pos.stock_name}</h3>
                         <p className="text-sm text-slate-500">{pos.stock_code}</p>
                       </div>
+
                       <div className="text-right">
-                        <p className="text-sm text-slate-500">累计持仓盈亏</p>
+
                         <p className={`text-xl font-bold ${(pos.floating_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {(pos.floating_pnl || 0) >= 0 ? '+' : ''}¥{(pos.floating_pnl || 0).toFixed(2)}
                         </p>
