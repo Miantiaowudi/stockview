@@ -8,6 +8,7 @@ export interface StockPrice {
   name: string
   code: string
   currentPrice: number
+  yesterdayClose: number
   openPrice: number
   highPrice: number
   lowPrice: number

@@ -50,6 +50,7 @@ export async function GET(request: Request) {
           name: parts[0],           // 股票名称
           code: code,
           currentPrice: parseFloat(parts[3]) || 0,  // 当前价
+          yesterdayClose: parseFloat(parts[2]) || 0, // 昨日收盘价
           openPrice: parseFloat(parts[1]) || 0,    // 开盘价
           highPrice: parseFloat(parts[4]) || 0,    // 最高价
           lowPrice: parseFloat(parts[5]) || 0,     // 最低价

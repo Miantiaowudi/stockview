@@ -39,8 +39,11 @@ interface CurrentPosition {
   buy_total?: number
   sell_total?: number
   current_price?: number
+  yesterday_close?: number
   floating_pnl?: number
   floating_pnl_rate?: number
+  daily_pnl?: number
+  daily_pnl_rate?: number
 }
 
 export default function AnalyticsPage() {
@@ -199,27 +202,43 @@ export default function AnalyticsPage() {
           const prices = await getStockPrices(currentWithNames.map(c => c.stock_code))
           setStockPrices(prices)
           
-          // 计算浮动盈亏
+          // 计算浮动盈亏和当日盈亏
+          const today = new Date()
+          const dayOfWeek = today.getDay()
+          
           const currentWithPnL = currentWithNames.map(pos => {
             const price = prices[pos.stock_code]
             if (price) {
               const currentMarketValue = price.currentPrice * pos.hold_quantity
               const floatingPnl = currentMarketValue - pos.total_cost
               const floatingPnlRate = (floatingPnl / pos.total_cost) * 100
+              
+              // 计算当日盈亏：检查是否周末
+              let dailyPnl = 0
+              let dailyPnlRate = 0
+              if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                // 交易日：当日盈亏 = (当前价 - 昨日收盘价) * 持仓数量
+                dailyPnl = (price.currentPrice - price.yesterdayClose) * pos.hold_quantity
+                dailyPnlRate = ((price.currentPrice - price.yesterdayClose) / price.yesterdayClose) * 100
+              }
+              // 周末：当日盈亏为0
+              
               return {
                 ...pos,
                 current_price: price.currentPrice,
+                yesterday_close: price.yesterdayClose,
                 floating_pnl: floatingPnl,
-                floating_pnl_rate: floatingPnlRate
+                floating_pnl_rate: floatingPnlRate,
+                daily_pnl: dailyPnl,
+                daily_pnl_rate: dailyPnlRate
               }
             }
             return pos
           })
           setCurrentPositions(currentWithPnL)
           
-          // 计算当前持仓的总浮动盈亏
-          const totalCurrentPnl = currentWithPnL.reduce((sum, pos) => sum + (pos.floating_pnl || 0), 0)
-          setCurrentPnl(totalCurrentPnl)
+          // 计算当前持仓的总当日盈亏
+          const totalCurrentPnl = currentWithPnL.reduce((sum, pos) => sum + (pos.daily_pnl || 0), 0)
         } else {
           // 没有当前持仓时设置当前盈亏为0
           setCurrentPnl(0)
@@ -372,7 +391,7 @@ export default function AnalyticsPage() {
                     )}
                   </svg>
                 </div>
-                <span className="stat-card-label">当前盈亏</span>
+                <span className="stat-card-label">当日盈亏</span>
               </div>
               <p className={`stat-card-value ${currentPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {currentPnl >= 0 ? '+' : ''}¥{currentPnl.toLocaleString()}
@@ -421,7 +440,7 @@ export default function AnalyticsPage() {
                     key={i} 
                     href={`/dashboard/detail/${pos.stock_code}`}
                     className={`group block p-5 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                      (pos.floating_pnl || 0) >= 0 
+                      (pos.daily_pnl || 0) >= 0 
                         ? 'border-green-200 bg-gradient-to-br from-white to-green-50 hover:border-green-400' 
                         : 'border-red-200 bg-gradient-to-br from-white to-red-50 hover:border-red-400'
                     }`}
@@ -432,11 +451,11 @@ export default function AnalyticsPage() {
                         <p className="text-sm text-slate-500">{pos.stock_code}</p>
                       </div>
                       <div className="text-right">
-                        <p className={`text-xl font-bold ${(pos.floating_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {(pos.floating_pnl || 0) >= 0 ? '+' : ''}¥{(pos.floating_pnl || 0).toFixed(2)}
+                        <p className={`text-xl font-bold ${(pos.daily_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(pos.daily_pnl || 0) >= 0 ? '+' : ''}¥{(pos.daily_pnl || 0).toFixed(2)}
                         </p>
-                        <p className={`text-sm font-medium ${(pos.floating_pnl_rate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {(pos.floating_pnl_rate || 0) >= 0 ? '+' : ''}{(pos.floating_pnl_rate || 0).toFixed(2)}%
+                        <p className={`text-sm font-medium ${(pos.daily_pnl_rate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(pos.daily_pnl_rate || 0) >= 0 ? '+' : ''}{(pos.daily_pnl_rate || 0).toFixed(2)}%
                         </p>
                       </div>
                     </div>
@@ -456,8 +475,8 @@ export default function AnalyticsPage() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 mb-1">当日盈亏</p>
-                        <p className={`font-semibold ${(pos.floating_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {(pos.floating_pnl || 0) >= 0 ? '+' : ''}¥{(pos.floating_pnl || 0).toFixed(2)} ({(pos.floating_pnl_rate || 0) >= 0 ? '+' : ''}{(pos.floating_pnl_rate || 0).toFixed(2)}%)
+                        <p className={`font-semibold ${(pos.daily_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(pos.daily_pnl || 0) >= 0 ? '+' : ''}¥{(pos.daily_pnl || 0).toFixed(2)} ({(pos.daily_pnl_rate || 0) >= 0 ? '+' : ''}{(pos.daily_pnl_rate || 0).toFixed(2)}%)
                         </p>
                       </div>
                     </div>
