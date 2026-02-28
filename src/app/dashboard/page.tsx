@@ -478,26 +478,42 @@ export default function AnalyticsPage() {
 
         {/* Tab切换 */}
         <div className="mb-6">
-          <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+          <div className="inline-flex gap-1 p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/50">
             <button
               onClick={() => setActiveTab('current')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden ${
                 activeTab === 'current'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-800'
+                  ? 'text-white shadow-md shadow-blue-500/25'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'
               }`}
             >
-              当前持仓
+              {activeTab === 'current' && (
+                <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700" />
+              )}
+              <span className="relative z-10 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                当前持仓
+              </span>
             </button>
             <button
               onClick={() => setActiveTab('cleared')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden ${
                 activeTab === 'cleared'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-800'
+                  ? 'text-white shadow-md shadow-blue-500/25'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'
               }`}
             >
-              已清仓
+              {activeTab === 'cleared' && (
+                <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700" />
+              )}
+              <span className="relative z-10 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                已清仓
+              </span>
             </button>
           </div>
         </div>
@@ -518,49 +534,60 @@ export default function AnalyticsPage() {
                   placeholder="搜索股票名称/代码..."
                   value={currentSearchTerm}
                   onChange={(e) => setCurrentSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 pl-11 text-sm border border-slate-200 rounded-xl bg-slate-50/50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all duration-200"
                 />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
               {/* Filter */}
-              <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
+              <div className="flex gap-1 p-1.5 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/50">
                 <button
                   onClick={() => setCurrentFilter('all')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    currentFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                    currentFilter === 'all' 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-white/70'
                   }`}
                 >
                   全部
                 </button>
                 <button
                   onClick={() => setCurrentFilter('profit')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    currentFilter === 'profit' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                    currentFilter === 'profit' 
+                      ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25' 
+                      : 'text-slate-600 hover:text-emerald-600 hover:bg-white/70'
                   }`}
                 >
                   盈利
                 </button>
                 <button
                   onClick={() => setCurrentFilter('loss')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    currentFilter === 'loss' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                    currentFilter === 'loss' 
+                      ? 'bg-red-500 text-white shadow-md shadow-red-500/25' 
+                      : 'text-slate-600 hover:text-red-600 hover:bg-white/70'
                   }`}
                 >
                   亏损
                 </button>
               </div>
               {/* Sort */}
-              <select
-                value={currentSort}
-                onChange={(e) => setCurrentSort(e.target.value as any)}
-                className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                <option value="default">默认排序</option>
-                <option value="pnl-asc">盈亏 ↑ 升序</option>
-                <option value="pnl-desc">盈亏 ↓ 降序</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={currentSort}
+                  onChange={(e) => setCurrentSort(e.target.value as any)}
+                  className="appearance-none px-4 py-2.5 pl-10 pr-10 text-sm font-medium border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all duration-200 hover:border-slate-300"
+                >
+                  <option value="default">默认排序</option>
+                  <option value="pnl-asc">盈亏 ↑ 升序</option>
+                  <option value="pnl-desc">盈亏 ↓ 降序</option>
+                </select>
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
             {filteredCurrentPositions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -651,51 +678,62 @@ export default function AnalyticsPage() {
                   placeholder="搜索股票名称/代码..."
                   value={clearedSearchTerm}
                   onChange={(e) => setClearedSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2.5 pl-11 text-sm border border-slate-200 rounded-xl bg-slate-50/50 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:bg-white transition-all duration-200"
                 />
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
               {/* Filter */}
-              <div className="flex gap-1 p-1 bg-slate-100 rounded-lg">
+              <div className="flex gap-1 p-1.5 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/50">
                 <button
                   onClick={() => setClearedFilter('all')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    clearedFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                    clearedFilter === 'all' 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-white/70'
                   }`}
                 >
                   全部
                 </button>
                 <button
                   onClick={() => setClearedFilter('profit')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    clearedFilter === 'profit' ? 'bg-white text-green-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                    clearedFilter === 'profit' 
+                      ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25' 
+                      : 'text-slate-600 hover:text-emerald-600 hover:bg-white/70'
                   }`}
                 >
                   盈利
                 </button>
                 <button
                   onClick={() => setClearedFilter('loss')}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                    clearedFilter === 'loss' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-600 hover:text-slate-800'
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+                    clearedFilter === 'loss' 
+                      ? 'bg-red-500 text-white shadow-md shadow-red-500/25' 
+                      : 'text-slate-600 hover:text-red-600 hover:bg-white/70'
                   }`}
                 >
                   亏损
                 </button>
               </div>
               {/* Sort */}
-              <select
-                value={clearedSort}
-                onChange={(e) => setClearedSort(e.target.value as any)}
-                className="px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-              >
-                <option value="default">默认排序</option>
-                <option value="pnl-asc">盈亏 ↑ 升序</option>
-                <option value="pnl-desc">盈亏 ↓ 降序</option>
-                <option value="time-asc">时间 ↑ 早到晚</option>
-                <option value="time-desc">时间 ↓ 晚到早</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={clearedSort}
+                  onChange={(e) => setClearedSort(e.target.value as any)}
+                  className="appearance-none px-4 py-2.5 pl-10 pr-10 text-sm font-medium border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all duration-200 hover:border-slate-300"
+                >
+                  <option value="default">默认排序</option>
+                  <option value="pnl-asc">盈亏 ↑ 升序</option>
+                  <option value="pnl-desc">盈亏 ↓ 降序</option>
+                  <option value="time-asc">时间 ↑ 早到晚</option>
+                  <option value="time-desc">时间 ↓ 晚到早</option>
+                </select>
+                <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
             {filteredClearedPositions.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
