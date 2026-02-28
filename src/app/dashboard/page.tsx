@@ -239,6 +239,7 @@ export default function AnalyticsPage() {
           
           // 计算当前持仓的总当日盈亏
           const totalCurrentPnl = currentWithPnL.reduce((sum, pos) => sum + (pos.daily_pnl || 0), 0)
+          setCurrentPnl(totalCurrentPnl)
         } else {
           // 没有当前持仓时设置当前盈亏为0
           setCurrentPnl(0)
@@ -440,7 +441,7 @@ export default function AnalyticsPage() {
                     key={i} 
                     href={`/dashboard/detail/${pos.stock_code}`}
                     className={`group block p-5 rounded-xl border-2 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                      (pos.daily_pnl || 0) >= 0 
+                      (pos.floating_pnl || 0) >= 0 
                         ? 'border-green-200 bg-gradient-to-br from-white to-green-50 hover:border-green-400' 
                         : 'border-red-200 bg-gradient-to-br from-white to-red-50 hover:border-red-400'
                     }`}
@@ -451,11 +452,12 @@ export default function AnalyticsPage() {
                         <p className="text-sm text-slate-500">{pos.stock_code}</p>
                       </div>
                       <div className="text-right">
-                        <p className={`text-xl font-bold ${(pos.daily_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {(pos.daily_pnl || 0) >= 0 ? '+' : ''}¥{(pos.daily_pnl || 0).toFixed(2)}
+                        <p className="text-sm text-slate-500">累计持仓盈亏</p>
+                        <p className={`text-xl font-bold ${(pos.floating_pnl || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(pos.floating_pnl || 0) >= 0 ? '+' : ''}¥{(pos.floating_pnl || 0).toFixed(2)}
                         </p>
-                        <p className={`text-sm font-medium ${(pos.daily_pnl_rate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {(pos.daily_pnl_rate || 0) >= 0 ? '+' : ''}{(pos.daily_pnl_rate || 0).toFixed(2)}%
+                        <p className={`text-sm font-medium ${(pos.floating_pnl_rate || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {(pos.floating_pnl_rate || 0) >= 0 ? '+' : ''}{(pos.floating_pnl_rate || 0).toFixed(2)}%
                         </p>
                       </div>
                     </div>
@@ -470,8 +472,9 @@ export default function AnalyticsPage() {
                         <p className="font-semibold text-slate-700">¥{pos.current_price?.toFixed(2) || '--'}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-500 mb-1">持仓数量</p>
+                        <p className="text-xs text-slate-500 mb-1">持仓市值</p>
                         <p className="font-semibold text-slate-700">{pos.hold_quantity}</p>
+                        <p className="font-semibold text-slate-700">¥{((pos.current_price || 0) * pos.hold_quantity).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 mb-1">当日盈亏</p>
@@ -483,7 +486,7 @@ export default function AnalyticsPage() {
                     
                     <div className="mt-2 flex items-center text-sm text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
                       <span>查看详情</span>
-                      <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
