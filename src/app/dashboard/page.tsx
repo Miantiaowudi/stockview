@@ -318,7 +318,7 @@ export default function AnalyticsPage() {
             <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
             总体概览
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {/* 总买入 */}
             <div className="stat-card stagger-item">
               <div className="flex items-center gap-3 mb-2">
@@ -364,9 +364,9 @@ export default function AnalyticsPage() {
                 <div className={`w-10 h-10 rounded-lg ${totalPnL >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
                   <svg className={`w-5 h-5 ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {totalPnL >= 0 ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     )}
                   </svg>
                 </div>
@@ -403,7 +403,7 @@ export default function AnalyticsPage() {
           <div className="inline-flex gap-1 p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/50">
             <button
               onClick={() => setActiveTab('current')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden ${
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden cursor-pointer ${
                 activeTab === 'current'
                   ? 'text-white shadow-md shadow-blue-500/25'
                   : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'
@@ -421,7 +421,7 @@ export default function AnalyticsPage() {
             </button>
             <button
               onClick={() => setActiveTab('cleared')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden ${
+              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden cursor-pointer ${
                 activeTab === 'cleared'
                   ? 'text-white shadow-md shadow-blue-500/25'
                   : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'

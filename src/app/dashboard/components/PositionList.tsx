@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { CurrentPosition, ClearedPosition } from '../page'
 import PositionCard from './PositionCard'
+import Select from './Select'
 
 type Position = CurrentPosition | ClearedPosition
 
@@ -75,24 +76,52 @@ export default function PositionList({ positions, type }: PositionListProps) {
 
   const sortOptions = isCurrent 
     ? [
-        { value: 'default', label: '默认排序' },
-        { value: 'pnl-asc', label: '盈亏 ↑ 升序' },
-        { value: 'pnl-desc', label: '盈亏 ↓ 降序' }
+        { 
+          value: 'default', 
+          label: '默认排序',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+        },
+        { 
+          value: 'pnl-asc', 
+          label: '盈亏 ↑ 升序',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+        },
+        { 
+          value: 'pnl-desc', 
+          label: '盈亏 ↓ 降序',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+        }
       ]
     : [
-        { value: 'default', label: '默认排序' },
-        { value: 'pnl-asc', label: '盈亏 ↑ 升序' },
-        { value: 'pnl-desc', label: '盈亏 ↓ 降序' },
-        { value: 'time-asc', label: '时间 ↑ 早到晚' },
-        { value: 'time-desc', label: '时间 ↓ 晚到早' }
+        { 
+          value: 'default', 
+          label: '默认排序',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+        },
+        { 
+          value: 'pnl-asc', 
+          label: '盈亏 ↑ 升序',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+        },
+        { 
+          value: 'pnl-desc', 
+          label: '盈亏 ↓ 降序',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+        },
+        { 
+          value: 'time-asc', 
+          label: '清仓时间 ↑ 早到晚',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        },
+        { 
+          value: 'time-desc', 
+          label: '清仓时间 ↓ 晚到早',
+          icon: <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        }
       ]
 
   return (
     <div className="card p-6">
-      <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-        <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-        {title}
-      </h2>
       
       {/* Search/Filter/Sort Controls */}
       <div className="mb-6 flex flex-wrap gap-3 items-center">
@@ -114,51 +143,57 @@ export default function PositionList({ positions, type }: PositionListProps) {
         <div className="flex gap-1 p-1.5 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/50">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer ${
               filter === 'all' 
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25' 
                 : 'text-slate-600 hover:text-slate-800 hover:bg-white/70'
             }`}
           >
-            全部
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              全部
+            </span>
           </button>
           <button
             onClick={() => setFilter('profit')}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer ${
               filter === 'profit' 
                 ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25' 
                 : 'text-slate-600 hover:text-emerald-600 hover:bg-white/70'
             }`}
           >
-            盈利
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              盈利
+            </span>
           </button>
           <button
             onClick={() => setFilter('loss')}
-            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 ${
+            className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 cursor-pointer ${
               filter === 'loss' 
                 ? 'bg-red-500 text-white shadow-md shadow-red-500/25' 
                 : 'text-slate-600 hover:text-red-600 hover:bg-white/70'
             }`}
           >
-            亏损
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+              </svg>
+              亏损
+            </span>
           </button>
         </div>
         
         {/* Sort */}
-        <div className="relative">
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortType)}
-            className="appearance-none px-4 py-2.5 pl-10 pr-10 text-sm font-medium border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer transition-all duration-200 hover:border-slate-300"
-          >
-            {sortOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-          <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
+        <Select
+          value={sort}
+          onChange={(value) => setSort(value as SortType)}
+          options={sortOptions}
+        />
       </div>
       
       {/* Position Cards */}
