@@ -441,16 +441,14 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-3 border-t border-slate-100">
                       <div>
                         <p className="text-xs text-slate-500 mb-1">持仓成本</p>
                         <p className="font-semibold text-slate-700">¥{pos.avg_cost.toFixed(2)}</p>
-                        <p className="text-xs text-slate-400">合计: ¥{pos.total_cost.toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 mb-1">当前价格</p>
                         <p className="font-semibold text-slate-700">¥{pos.current_price?.toFixed(2) || '--'}</p>
-                        <p className="text-xs text-slate-400">市值: ¥{(pos.current_price ? pos.current_price * pos.hold_quantity : 0).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 mb-1">持仓数量</p>
