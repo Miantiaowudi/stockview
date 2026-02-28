@@ -605,11 +605,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
                   <tr>
                     <th className="px-4 py-3 text-left">时间</th>
                     <th className="px-4 py-3 text-left">方向</th>
-                    <th className="px-4 py-3 text-right">价格</th>
-                    <th className="px-4 py-3 text-right">数量</th>
-                    <th className="px-4 py-3 text-right">金额</th>
-                    <th className="px-4 py-3 text-right">手续费</th>
+                    <th className="px-4 py-3 text-left">价格</th>
+                    <th className="px-4 py-3 text-left">数量</th>
+                    <th className="px-4 py-3 text-left">金额</th>
+                    <th className="px-4 py-3 text-left">手续费</th>
                   </tr>
+
                 </thead>
                 <tbody>
                   {trades.map((trade, i) => (
@@ -622,10 +623,10 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
                           {trade.direction === 'buy' ? '买入' : '卖出'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right font-medium">¥{trade.price.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right text-slate-600">{trade.quantity}</td>
-                      <td className="px-4 py-3 text-right font-medium">¥{(trade.price * trade.quantity).toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right text-slate-500">¥{trade.commission.toFixed(2)}</td>
+                      <td className="px-4 py-3 font-medium">¥{trade.price.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-slate-600">{trade.quantity}</td>
+                      <td className="px-4 py-3 font-medium">¥{(trade.price * trade.quantity).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-slate-500">¥{trade.commission.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
