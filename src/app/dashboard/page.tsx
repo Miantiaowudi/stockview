@@ -473,8 +473,7 @@ export default function AnalyticsPage() {
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 mb-1">持仓市值</p>
-                        <p className="font-semibold text-slate-700">{pos.hold_quantity}</p>
-                        <p className="font-semibold text-slate-700">¥{((pos.current_price || 0) * pos.hold_quantity).toFixed(2)}</p>
+                        <p className="font-semibold text-slate-700">¥{((pos.current_price || 0) * pos.hold_quantity).toFixed(2)} ({pos.hold_quantity})</p>
                       </div>
                       <div>
                         <p className="text-xs text-slate-500 mb-1">当日盈亏</p>
