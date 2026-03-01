@@ -11,13 +11,13 @@ interface PositionListProps {
   positions: Position[]
   type: 'current' | 'cleared'
   showData?: boolean
-  loading?: boolean
+  loaded?: boolean
 }
 
 type FilterType = 'all' | 'profit' | 'loss'
 type SortType = 'default' | 'pnl-asc' | 'pnl-desc' | 'time-asc' | 'time-desc'
 
-export default function PositionList({ positions, type, showData = true, loading = false }: PositionListProps) {
+export default function PositionList({ positions, type, showData = true, loaded = false }: PositionListProps) {
   const isCurrent = type === 'current'
   
   const [searchTerm, setSearchTerm] = useState('')
@@ -199,7 +199,7 @@ export default function PositionList({ positions, type, showData = true, loading
       </div>
       
       {/* Position Cards */}
-      {loading ? (
+      {!loaded ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white rounded-xl border-2 border-slate-200 p-5">

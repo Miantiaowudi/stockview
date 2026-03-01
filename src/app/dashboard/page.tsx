@@ -51,6 +51,7 @@ export interface CurrentPosition {
 export default function AnalyticsPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [dataLoaded, setDataLoaded] = useState(false)
   const [trades, setTrades] = useState<Trade[]>([])
   const [clearedPositions, setClearedPositions] = useState<ClearedPosition[]>([])
   const [currentPositions, setCurrentPositions] = useState<CurrentPosition[]>([])
@@ -249,21 +250,24 @@ export default function AnalyticsPage() {
           
           const totalCurrentPnl = currentWithPnL.reduce((sum, pos) => sum + (pos.daily_pnl || 0), 0)
           setCurrentPnl(totalCurrentPnl)
+          setDataLoaded(true)
         } else {
           setCurrentPnl(0)
+          setDataLoaded(true)
         }
       } catch (e) {
         console.error('获取股票名称失败:', e)
         setClearedPositions(cleared)
         setCurrentPositions(current)
         setCurrentPnl(0)
+        setDataLoaded(true)
       }
     } else {
       setClearedPositions(cleared)
       setCurrentPositions(current)
       setCurrentPnl(0)
+      setDataLoaded(true)
     }
-
     setTotalPnL(totalPnL)
     setTotalBuy(totalBuyAmount)
     setTotalSell(totalSellAmount)
@@ -536,11 +540,11 @@ export default function AnalyticsPage() {
 
         {/* Position Lists */}
         {activeTab === 'current' && (
-          <PositionList positions={currentPositions} type="current" showData={showData} loading={loading} />
+          <PositionList positions={currentPositions} type="current" showData={showData} loaded={dataLoaded} />
         )}
 
         {activeTab === 'cleared' && (
-          <PositionList positions={clearedPositions} type="cleared" showData={showData} loading={loading} />
+          <PositionList positions={clearedPositions} type="cleared" showData={showData} loaded={dataLoaded} />
         )}
       </main>
     </div>
