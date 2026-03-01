@@ -56,6 +56,30 @@ export default function ImportPage() {
     stamp_duty: number
   }[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [currentEntry, setCurrentEntry] = useState<{
+    trade_date: string
+    trade_time: string
+    stock_code: string
+    stock_name: string
+    direction: 'buy' | 'sell'
+    quantity: number
+    price: number
+    amount: number
+    commission: number
+    stamp_duty: number
+  }>({
+    trade_date: '',
+    trade_time: '',
+    stock_code: '',
+    stock_name: '',
+    direction: 'buy',
+    quantity: 100,
+    price: 0,
+    amount: 0,
+    commission: 0,
+    stamp_duty: 0
+  })
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -89,7 +113,88 @@ export default function ImportPage() {
     }
   }, [stockSearch])
 
-  // 添加一行手动录入
+  // 打开新增弹窗
+  const openAddModal = () => {
+    const today = new Date()
+    const dateStr = today.toISOString().split('T')[0]
+    const timeStr = today.toTimeString().slice(0, 5)
+    
+    setCurrentEntry({
+      trade_date: dateStr,
+      trade_time: timeStr,
+      stock_code: '',
+      stock_name: '',
+      direction: 'buy',
+      quantity: 100,
+      price: 0,
+      amount: 0,
+      commission: 0,
+      stamp_duty: 0
+    })
+    setModalOpen(true)
+  }
+
+  // 更新当前录入
+  const updateCurrentEntry = (field: string, value: any) => {
+    const updated = { ...currentEntry, [field]: value }
+    
+    if (field === 'stock_code') {
+      const stock = stockList.find(s => s.code === value)
+      if (stock) updated.stock_name = stock.name
+    }
+    
+    if (field === 'quantity' || field === 'price') {
+      const qty = field === 'quantity' ? value : updated.quantity
+      const prc = field === 'price' ? value : updated.price
+      updated.amount = qty * prc
+      updated.commission = updated.amount * 0.0003
+      updated.stamp_duty = updated.direction === 'sell' ? updated.amount * 0.0005 : 0
+    }
+    if (field === 'direction') {
+      updated.stamp_duty = value === 'sell' ? updated.amount * 0.0005 : 0
+    }
+    
+    setCurrentEntry(updated)
+  }
+
+  // 提交单条记录
+  const handleSingleSubmit = async () => {
+    if (!user || !currentEntry.stock_code || currentEntry.quantity <= 0 || currentEntry.price <= 0) {
+      setImportResult({ success: false, message: '请填写完整的交易信息' })
+      return
+    }
+    
+    setSubmitting(true)
+    
+    try {
+      const trade = {
+        user_id: user.id,
+        trade_time: `${currentEntry.trade_date}T${currentEntry.trade_time}:00`,
+        stock_code: currentEntry.stock_code,
+        stock_name: currentEntry.stock_name,
+        direction: currentEntry.direction,
+        quantity: currentEntry.quantity,
+        price: currentEntry.price,
+        amount: currentEntry.amount,
+        commission: currentEntry.commission,
+        stamp_duty: currentEntry.stamp_duty
+      }
+      
+      const { error } = await supabase.from('normalized_trades').insert([trade])
+      
+      if (error) throw error
+      
+      setImportResult({ success: true, message: '交易记录添加成功' })
+      setModalOpen(false)
+    } catch (error: any) {
+      console.error('添加失败:', error)
+      setImportResult({ success: false, message: `添加失败: ${error.message}` })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+
   const addManualEntry = () => {
     const today = new Date()
     const dateStr = today.toISOString().split('T')[0].replace(/-/g, '')
@@ -683,7 +788,7 @@ export default function ImportPage() {
                   手动录入交易记录
                 </h2>
                 <button
-                  onClick={addManualEntry}
+                  onClick={openAddModal}
                   className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -942,6 +1047,178 @@ export default function ImportPage() {
           </div>
         </div>
       </main>
+      {/* Modal for single entry */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Overlay */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setModalOpen(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-800">添加交易记录</h3>
+              <button
+                onClick={() => setModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Form */}
+            <div className="p-4 space-y-4">
+              {/* Date and Time */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">成交日期</label>
+                  <input
+                    type="date"
+                    value={currentEntry.trade_date}
+                    onChange={(e) => updateCurrentEntry('trade_date', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">成交时间</label>
+                  <input
+                    type="time"
+                    value={currentEntry.trade_time}
+                    onChange={(e) => updateCurrentEntry('trade_time', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              
+              {/* Stock Code */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">证券代码</label>
+                <input
+                  type="text"
+                  value={currentEntry.stock_code}
+                  onChange={(e) => updateCurrentEntry('stock_code', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
+                  placeholder="600000"
+                  list="stock-modal-list"
+                />
+                <datalist id="stock-modal-list">
+                  {stockList.map(stock => (
+                    <option key={stock.code} value={stock.code}>
+                      {stock.name}
+                    </option>
+                  ))}
+                </datalist>
+              </div>
+              
+              {/* Direction */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">操作方向</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="direction"
+                      value="buy"
+                      checked={currentEntry.direction === 'buy'}
+                      onChange={() => updateCurrentEntry('direction', 'buy')}
+                      className="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500"
+                    />
+                    <span className="text-sm text-slate-700">买入</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="direction"
+                      value="sell"
+                      checked={currentEntry.direction === 'sell'}
+                      onChange={() => updateCurrentEntry('direction', 'sell')}
+                      className="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500"
+                    />
+                    <span className="text-sm text-slate-700">卖出</span>
+                  </label>
+                </div>
+              </div>
+              
+              {/* Quantity */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">数量（手）</label>
+                <input
+                  type="number"
+                  value={currentEntry.quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    // Round to nearest 100, minimum 100
+                    const rounded = Math.max(100, Math.round(val / 100) * 100)
+                    updateCurrentEntry('quantity', rounded)
+                  }}
+                  min={100}
+                  step={100}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+                <p className="text-xs text-slate-400 mt-1">必须为100的整数倍，最小100</p>
+              </div>
+              
+              {/* Price */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">价格</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={currentEntry.price}
+                  onChange={(e) => updateCurrentEntry('price', parseFloat(e.target.value) || 0)}
+                  min={0}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500"
+                />
+              </div>
+              
+              {/* Calculated Fields */}
+              <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">成交金额：</span>
+                  <span className="font-medium text-slate-800">{currentEntry.amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">手续费：</span>
+                  <span className="font-medium text-slate-800">{currentEntry.commission.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">印花税：</span>
+                  <span className="font-medium text-slate-800">{currentEntry.stamp_duty.toFixed(2)}</span>
+                </div>
+              </div>
+              
+              {/* Submit Button */}
+              <button
+                onClick={handleSingleSubmit}
+                disabled={submitting || !currentEntry.stock_code || currentEntry.quantity <= 0 || currentEntry.price <= 0}
+                className="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    提交中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    确认添加
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
