@@ -820,7 +820,7 @@ export default function ImportPage() {
               {/* 手动录入表格 */}
               {manualEntries.length > 0 ? (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="table">
                     <thead>
                       <tr className="bg-slate-50">
                         <th className="px-2 py-2 text-left text-slate-600 font-medium">成交日期</th>
