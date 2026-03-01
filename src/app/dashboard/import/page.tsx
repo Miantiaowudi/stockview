@@ -839,87 +839,21 @@ export default function ImportPage() {
                     <tbody>
                       {manualEntries.map((entry, index) => (
                         <tr key={index} className="border-b border-slate-100">
-                          <td className="px-1 py-2">
-                            <input
-                              type="text"
-                              value={entry.trade_date}
-                              onChange={(e) => updateManualEntry(index, 'trade_date', e.target.value)}
-                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
-                              placeholder="YYYYMMDD"
-                            />
+                          <td className="px-2 py-2 text-slate-600">{entry.trade_date}</td>
+                          <td className="px-2 py-2 text-slate-600">{entry.trade_time}</td>
+                          <td className="px-2 py-2 text-slate-600">{entry.stock_code}</td>
+                          <td className="px-2 py-2 text-slate-600">{entry.stock_name}</td>
+                          <td className="px-2 py-2">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${entry.direction === 'buy' ? 'badge-buy' : 'badge-sell'}`}>
+                              {entry.direction === 'buy' ? '买入' : '卖出'}
+                            </span>
                           </td>
-                          <td className="px-1 py-2">
-                            <input
-                              type="text"
-                              value={entry.trade_time}
-                              onChange={(e) => updateManualEntry(index, 'trade_time', e.target.value)}
-                              className="w-16 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
-                              placeholder="HHMM"
-                            />
-                          </td>
-                          <td className="px-1 py-2">
-                            <input
-                              type="text"
-                              value={entry.stock_code}
-                              onChange={(e) => updateManualEntry(index, 'stock_code', e.target.value)}
-                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
-                              placeholder="600000"
-                              list={`stock-list-${index}`}
-                            />
-                            <datalist id={`stock-list-${index}`}>
-                              {stockList.map(stock => (
-                                <option key={stock.code} value={stock.code}>
-                                  {stock.name}
-                                </option>
-                              ))}
-                            </datalist>
-                          </td>
-                          <td className="px-1 py-2">
-                            <input
-                              type="text"
-                              value={entry.stock_name}
-                              onChange={(e) => updateManualEntry(index, 'stock_name', e.target.value)}
-                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
-                              placeholder="股票名称"
-                            />
-                          </td>
-                          <td className="px-1 py-2">
-                            <select
-                              value={entry.direction}
-                              onChange={(e) => updateManualEntry(index, 'direction', e.target.value)}
-                              className="px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
-                            >
-                              <option value="buy">买入</option>
-                              <option value="sell">卖出</option>
-                            </select>
-                          </td>
-                          <td className="px-1 py-2">
-                            <input
-                              type="number"
-                              value={entry.quantity}
-                              onChange={(e) => updateManualEntry(index, 'quantity', parseInt(e.target.value) || 0)}
-                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
-                            />
-                          </td>
-                          <td className="px-1 py-2">
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={entry.price}
-                              onChange={(e) => updateManualEntry(index, 'price', parseFloat(e.target.value) || 0)}
-                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
-                            />
-                          </td>
-                          <td className="px-1 py-2 text-slate-600">
-                            {entry.amount.toFixed(2)}
-                          </td>
-                          <td className="px-1 py-2 text-slate-600">
-                            {entry.commission.toFixed(2)}
-                          </td>
-                          <td className="px-1 py-2 text-slate-600">
-                            {entry.stamp_duty.toFixed(2)}
-                          </td>
-                          <td className="px-1 py-2">
+                          <td className="px-2 py-2 text-slate-600">{entry.quantity}</td>
+                          <td className="px-2 py-2 text-slate-600">{entry.price.toFixed(2)}</td>
+                          <td className="px-2 py-2 text-slate-600">{entry.amount?.toFixed(2) || '0.00'}</td>
+                          <td className="px-2 py-2 text-slate-600">{entry.commission?.toFixed(2) || '0.00'}</td>
+                          <td className="px-2 py-2 text-slate-600">{entry.stamp_duty?.toFixed(2) || '0.00'}</td>
+                          <td className="px-2 py-2">
                             <button
                               onClick={() => removeManualEntry(index)}
                               className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
@@ -933,6 +867,7 @@ export default function ImportPage() {
                       ))}
                     </tbody>
                   </table>
+
 
                   {/* 提交按钮 */}
                   <div className="mt-6 flex justify-end">
