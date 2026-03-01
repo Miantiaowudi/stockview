@@ -285,11 +285,66 @@ export default function ImportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-500">加载中...</p>
-        </div>
+      <div className="min-h-screen bg-slate-50">
+        {/* Header Skeleton */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-slate-200 rounded-lg animate-pulse"></div>
+                <div className="h-6 w-40 bg-slate-200 rounded animate-pulse"></div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse"></div>
+                <div className="h-6 w-16 bg-slate-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Import Form Skeleton */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* File Upload Card Skeleton */}
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-6"></div>
+                <div className="h-32 bg-slate-100 rounded-xl animate-pulse mb-6"></div>
+                {/* Preview Table Skeleton */}
+                <div className="h-4 w-32 bg-slate-200 rounded animate-pulse mb-3"></div>
+                <div className="space-y-2">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="h-8 bg-slate-100 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column Skeleton */}
+            <div className="space-y-6">
+              {/* Broker Selection Skeleton */}
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-4"></div>
+                <div className="h-10 bg-slate-100 rounded-lg animate-pulse mb-4"></div>
+                <div className="space-y-2">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Instructions Skeleton */}
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <div className="h-6 w-20 bg-slate-200 rounded animate-pulse mb-4"></div>
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-4 bg-slate-100 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
