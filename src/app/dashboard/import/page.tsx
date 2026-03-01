@@ -167,21 +167,21 @@ export default function ImportPage() {
     setSubmitting(true)
     
     try {
+      // 添加到列表，不直接提交到数据库
       const trade = {
-        user_id: user.id,
-        trade_time: `${currentEntry.trade_date}T${currentEntry.trade_time}:00`,
+        trade_date: currentEntry.trade_date,
+        trade_time: currentEntry.trade_time,
         stock_code: currentEntry.stock_code,
+        stock_name: currentEntry.stock_name,
         direction: currentEntry.direction,
         quantity: currentEntry.quantity,
         price: currentEntry.price,
-        commission: currentEntry.quantity * currentEntry.price * 0.0003
+        amount: currentEntry.quantity * currentEntry.price,
+        commission: currentEntry.quantity * currentEntry.price * 0.0003,
+        stamp_duty: currentEntry.direction === 'sell' ? currentEntry.quantity * currentEntry.price * 0.0005 : 0
       }
       
-      const { error } = await supabase.from('normalized_trades').insert([trade])
-      
-      if (error) throw error
-      
-      setImportResult({ success: true, message: '交易记录添加成功' })
+      setManualEntries([...manualEntries, trade])
       setModalOpen(false)
     } catch (error: any) {
       console.error('添加失败:', error)
@@ -191,7 +191,7 @@ export default function ImportPage() {
     }
   }
 
-
+  // 添加手动录入行（用于旧表格方式）
   const addManualEntry = () => {
     const today = new Date()
     const dateStr = today.toISOString().split('T')[0].replace(/-/g, '')
@@ -211,41 +211,7 @@ export default function ImportPage() {
     }])
   }
 
-  // 更新手动录入行
-  const updateManualEntry = (index: number, field: string, value: any) => {
-    const updated = [...manualEntries]
-    updated[index] = { ...updated[index], [field]: value }
-    
-    // 如果修改了证券代码，同步更新证券名称
-    if (field === 'stock_code') {
-      const stock = stockList.find(s => s.code === value)
-      if (stock) {
-        updated[index].stock_name = stock.name
-      }
-    }
-    
-    // 计算成交金额
-    if (field === 'quantity' || field === 'price') {
-      updated[index].amount = updated[index].quantity * updated[index].price
-      // 手续费估算（万分之3）
-      updated[index].commission = updated[index].amount * 0.0003
-      // 印花税（卖出时 万分之5）
-      updated[index].stamp_duty = updated[index].direction === 'sell' ? updated[index].amount * 0.0005 : 0
-    }
-    // 方向改变时更新印花税
-    if (field === 'direction') {
-      updated[index].stamp_duty = value === 'sell' ? updated[index].amount * 0.0005 : 0
-    }
-    
-    setManualEntries(updated)
-  }
-
-  // 删除手动录入行
-  const removeManualEntry = (index: number) => {
-    setManualEntries(manualEntries.filter((_, i) => i !== index))
-  }
-
-  // 提交手动录入数据
+  // 提交手动录入数据（批量插入到数据库）
   const handleManualSubmit = async () => {
     if (!user) return
     
@@ -291,6 +257,42 @@ export default function ImportPage() {
       setSubmitting(false)
     }
   }
+
+  // 更新手动录入行
+
+  const updateManualEntry = (index: number, field: string, value: any) => {
+    const updated = [...manualEntries]
+    updated[index] = { ...updated[index], [field]: value }
+    
+    // 如果修改了证券代码，同步更新证券名称
+    if (field === 'stock_code') {
+      const stock = stockList.find(s => s.code === value)
+      if (stock) {
+        updated[index].stock_name = stock.name
+      }
+    }
+    
+    // 计算成交金额
+    if (field === 'quantity' || field === 'price') {
+      updated[index].amount = updated[index].quantity * updated[index].price
+      // 手续费估算（万分之3）
+      updated[index].commission = updated[index].amount * 0.0003
+      // 印花税（卖出时 万分之5）
+      updated[index].stamp_duty = updated[index].direction === 'sell' ? updated[index].amount * 0.0005 : 0
+    }
+    // 方向改变时更新印花税
+    if (field === 'direction') {
+      updated[index].stamp_duty = value === 'sell' ? updated[index].amount * 0.0005 : 0
+    }
+    
+    setManualEntries(updated)
+  }
+
+  // 删除手动录入行
+  const removeManualEntry = (index: number) => {
+    setManualEntries(manualEntries.filter((_, i) => i !== index))
+  }
+
 
   // 解析CSV文件
   const parseCSV = (content: string) => {
