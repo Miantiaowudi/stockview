@@ -32,6 +32,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
 
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
   const [trades, setTrades] = useState<Trade[]>([])
   const [stockName, setStockName] = useState('')
   const [stockPrice, setStockPrice] = useState<StockPrice | null>(null)
@@ -79,6 +80,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   useEffect(() => {
     if (!user || !stockCode) return
     const loadData = async () => {
+      setDataLoading(true)
       const { data: tradesData, error } = await supabase
         .from('normalized_trades')
         .select('*')
@@ -117,10 +119,10 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       } catch (e) {
         setStockName(stockCode)
       }
+      setDataLoading(false)
     }
     loadData()
   }, [user, stockCode, supabase])
-
 
 
   const handleLogout = async () => {
@@ -273,7 +275,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
               </div>
               <span className="stat-card-label">买入总额</span>
             </div>
-            <p className="stat-card-value">¥{totalBuy.toLocaleString()}</p>
+            <p className="stat-card-value">{dataLoading ? '-' : `¥${totalBuy.toLocaleString()}`}</p>
           </div>
 
           <div className="stat-card stagger-item">
@@ -285,7 +287,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
               </div>
               <span className="stat-card-label">卖出总额</span>
             </div>
-            <p className="stat-card-value">¥{totalSell.toLocaleString()}</p>
+            <p className="stat-card-value">{dataLoading ? '-' : `¥${totalSell.toLocaleString()}`}</p>
           </div>
 
           <div className="stat-card stagger-item">
@@ -297,14 +299,14 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
               </div>
               <span className="stat-card-label">手续费</span>
             </div>
-            <p className="stat-card-value text-slate-700">¥{totalCommission.toFixed(2)}</p>
+            <p className="stat-card-value text-slate-700">{dataLoading ? '-' : `¥${totalCommission.toFixed(2)}`}</p>
           </div>
 
-          <div className={`stat-card stagger-item ${profitLoss >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+          <div className={`stat-card stagger-item ${!dataLoading && profitLoss >= 0 ? 'border-green-200' : 'border-red-200'}`}>
             <div className="flex items-center gap-3 mb-2">
-              <div className={`w-10 h-10 rounded-lg ${profitLoss >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
-                <svg className={`w-5 h-5 ${profitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {profitLoss >= 0 ? (
+              <div className={`w-10 h-10 rounded-lg ${!dataLoading && profitLoss >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
+                <svg className={`w-5 h-5 ${!dataLoading && profitLoss >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {!dataLoading && profitLoss >= 0 ? (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   ) : (
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
@@ -313,8 +315,8 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
               </div>
               <span className="stat-card-label">{profitLossLabel}</span>
             </div>
-            <p className={`stat-card-value ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {profitLoss >= 0 ? '+' : ''}¥{profitLoss.toFixed(2)}
+            <p className={`stat-card-value ${!dataLoading && profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {dataLoading ? '-' : `${profitLoss >= 0 ? '+' : ''}¥${profitLoss.toFixed(2)}`}
             </p>
           </div>
         </div>
