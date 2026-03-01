@@ -10,12 +10,13 @@ type Position = CurrentPosition | ClearedPosition
 interface PositionListProps {
   positions: Position[]
   type: 'current' | 'cleared'
+  showData?: boolean
 }
 
 type FilterType = 'all' | 'profit' | 'loss'
 type SortType = 'default' | 'pnl-asc' | 'pnl-desc' | 'time-asc' | 'time-desc'
 
-export default function PositionList({ positions, type }: PositionListProps) {
+export default function PositionList({ positions, type, showData = true }: PositionListProps) {
   const isCurrent = type === 'current'
   
   const [searchTerm, setSearchTerm] = useState('')
@@ -200,7 +201,7 @@ export default function PositionList({ positions, type }: PositionListProps) {
       {filteredPositions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredPositions.map((pos, i) => (
-            <PositionCard key={i} position={pos} type={type} />
+            <PositionCard key={i} position={pos} type={type} showData={showData} />
           ))}
         </div>
       ) : (

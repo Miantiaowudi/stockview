@@ -8,9 +8,10 @@ type Position = CurrentPosition | ClearedPosition
 interface PositionCardProps {
   position: Position
   type: 'current' | 'cleared'
+  showData?: boolean
 }
 
-export default function PositionCard({ position, type }: PositionCardProps) {
+export default function PositionCard({ position, type, showData = true }: PositionCardProps) {
   const isCurrent = type === 'current'
   const currentPos = position as CurrentPosition
   const clearedPos = position as ClearedPosition
@@ -18,6 +19,13 @@ export default function PositionCard({ position, type }: PositionCardProps) {
   // Calculate values based on type
   const floatingPnl = isCurrent ? currentPos.floating_pnl : clearedPos.profit_loss
   const floatingPnlRate = isCurrent ? currentPos.floating_pnl_rate : clearedPos.profit_rate
+
+  // 格式化数值显示
+  const formatValue = (value: number, showSign = false) => {
+    if (!showData) return '****'
+    const formatted = value.toFixed(2)
+    return showSign && value > 0 ? '+' + formatted : formatted
+  }
 
   return (
     <Link 
@@ -43,10 +51,10 @@ export default function PositionCard({ position, type }: PositionCardProps) {
 
         <div className="text-right">
           <p className={`text-xl font-bold ${(floatingPnl || 0) >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {(floatingPnl || 0) >= 0 ? '+' : ''}¥{(floatingPnl || 0).toFixed(2)}
+            ¥{formatValue(floatingPnl || 0, true)}
           </p>
           <p className={`text-sm font-medium ${(floatingPnlRate || 0) >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-            {(floatingPnlRate || 0) >= 0 ? '+' : ''}{(floatingPnlRate || 0).toFixed(2)}%
+            {formatValue(floatingPnlRate || 0, true)}%
           </p>
         </div>
       </div>
@@ -55,22 +63,22 @@ export default function PositionCard({ position, type }: PositionCardProps) {
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-3 border-t border-slate-100">
           <div>
             <p className="text-xs text-slate-500 mb-1">持仓成本</p>
-            <p className="font-semibold text-slate-700">¥{currentPos.avg_cost.toFixed(2)}</p>
+            <p className="font-semibold text-slate-700">¥{formatValue(currentPos.avg_cost)}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">当前价格</p>
-            <p className="font-semibold text-slate-700">¥{currentPos.current_price?.toFixed(2) || '--'}</p>
+            <p className="font-semibold text-slate-700">¥{currentPos.current_price ? formatValue(currentPos.current_price) : '--'}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">持仓市值（股数）</p>
             <p className="font-semibold text-slate-700">
-              ¥{((currentPos.current_price || 0) * currentPos.hold_quantity).toFixed(2)} ({currentPos.hold_quantity})
+              ¥{formatValue((currentPos.current_price || 0) * currentPos.hold_quantity)} ({showData ? currentPos.hold_quantity : '**'})
             </p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">当日盈亏</p>
             <p className={`font-semibold ${(currentPos.daily_pnl || 0) >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-              {(currentPos.daily_pnl || 0) >= 0 ? '+' : ''}¥{(currentPos.daily_pnl || 0).toFixed(2)} ({(currentPos.daily_pnl_rate || 0) >= 0 ? '+' : ''}{(currentPos.daily_pnl_rate || 0).toFixed(2)}%)
+              ¥{formatValue(currentPos.daily_pnl || 0, true)} ({formatValue(currentPos.daily_pnl_rate || 0, true)}%)
             </p>
           </div>
         </div>
@@ -78,13 +86,13 @@ export default function PositionCard({ position, type }: PositionCardProps) {
         <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
           <div>
             <p className="text-xs text-slate-500 mb-1">买入</p>
-            <p className="font-semibold text-slate-700">¥{clearedPos.buy_avg_price.toFixed(2)} × {clearedPos.buy_quantity}</p>
-            <p className="text-xs text-slate-400">合计: ¥{clearedPos.buy_total.toFixed(2)}</p>
+            <p className="font-semibold text-slate-700">¥{formatValue(clearedPos.buy_avg_price)} × {showData ? clearedPos.buy_quantity : '**'}</p>
+            <p className="text-xs text-slate-400">合计: ¥{formatValue(clearedPos.buy_total)}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">卖出</p>
-            <p className="font-semibold text-slate-700">¥{clearedPos.sell_avg_price.toFixed(2)} × {clearedPos.sell_quantity}</p>
-            <p className="text-xs text-slate-400">合计: ¥{clearedPos.sell_total.toFixed(2)}</p>
+            <p className="font-semibold text-slate-700">¥{formatValue(clearedPos.sell_avg_price)} × {showData ? clearedPos.sell_quantity : '**'}</p>
+            <p className="text-xs text-slate-400">合计: ¥{formatValue(clearedPos.sell_total)}</p>
           </div>
         </div>
       )}
