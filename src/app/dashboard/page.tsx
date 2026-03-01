@@ -302,7 +302,7 @@ export default function AnalyticsPage() {
               <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
               <button 
                 onClick={handleLogout} 
-                className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                className="px-3 py-2 text-sm text-slate-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
               >
                 退出
               </button>
@@ -322,8 +322,8 @@ export default function AnalyticsPage() {
             {/* 总买入 */}
             <div className="stat-card stagger-item">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
@@ -335,8 +335,8 @@ export default function AnalyticsPage() {
             {/* 总卖出 */}
             <div className="stat-card stagger-item">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
@@ -359,10 +359,10 @@ export default function AnalyticsPage() {
             </div>
 
             {/* 清仓盈亏 */}
-            <div className={`stat-card stagger-item ${totalPnL >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+            <div className={`stat-card stagger-item ${totalPnL >= 0 ? 'border-red-200' : 'border-green-200'}`}>
               <div className="flex items-center gap-3 mb-2">
-                <div className={`w-10 h-10 rounded-lg ${totalPnL >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
-                  <svg className={`w-5 h-5 ${totalPnL >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`w-10 h-10 rounded-lg ${totalPnL >= 0 ? 'bg-red-50' : 'bg-green-50'} flex items-center justify-center`}>
+                  <svg className={`w-5 h-5 ${totalPnL >= 0 ? 'text-red-500' : 'text-green-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {totalPnL >= 0 ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     ) : (
@@ -372,16 +372,16 @@ export default function AnalyticsPage() {
                 </div>
                 <span className="stat-card-label">清仓盈亏</span>
               </div>
-              <p className={`stat-card-value ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`stat-card-value ${totalPnL >= 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {totalPnL >= 0 ? '+' : ''}¥{totalPnL.toLocaleString()}
               </p>
             </div>
 
             {/* 当日盈亏 */}
-            <div className={`stat-card stagger-item ${currentPnl >= 0 ? 'border-green-200' : 'border-red-200'}`}>
+            <div className={`stat-card stagger-item ${currentPnl >= 0 ? 'border-red-200' : 'border-green-200'}`}>
               <div className="flex items-center gap-3 mb-2">
-                <div className={`w-10 h-10 rounded-lg ${currentPnl >= 0 ? 'bg-green-50' : 'bg-red-50'} flex items-center justify-center`}>
-                  <svg className={`w-5 h-5 ${currentPnl >= 0 ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className={`w-10 h-10 rounded-lg ${currentPnl >= 0 ? 'bg-red-50' : 'bg-green-50'} flex items-center justify-center`}>
+                  <svg className={`w-5 h-5 ${currentPnl >= 0 ? 'text-red-500' : 'text-green-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {currentPnl >= 0 ? (
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     ) : (
@@ -391,7 +391,7 @@ export default function AnalyticsPage() {
                 </div>
                 <span className="stat-card-label">当日盈亏</span>
               </div>
-              <p className={`stat-card-value ${currentPnl >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`stat-card-value ${currentPnl >= 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {currentPnl >= 0 ? '+' : ''}¥{currentPnl.toLocaleString()}
               </p>
             </div>
