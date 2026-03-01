@@ -38,6 +38,24 @@ export default function ImportPage() {
   const [selectedBroker, setSelectedBroker] = useState('')
   const [previewData, setPreviewData] = useState<any[]>([])
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null)
+  const [activeTab, setActiveTab] = useState<'import' | 'manual'>('import')
+  
+  // 手动录入相关状态
+  const [stockList, setStockList] = useState<{ code: string; name: string }[]>([])
+  const [stockSearch, setStockSearch] = useState('')
+  const [manualEntries, setManualEntries] = useState<{
+    trade_date: string
+    trade_time: string
+    stock_code: string
+    stock_name: string
+    direction: 'buy' | 'sell'
+    quantity: number
+    price: number
+    amount: number
+    commission: number
+    stamp_duty: number
+  }[]>([])
+  const [submitting, setSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -55,6 +73,122 @@ export default function ImportPage() {
     }
     checkUser()
   }, [supabase, router])
+
+  // 获取股票列表
+  useEffect(() => {
+    const fetchStocks = async () => {
+      const searchParam = stockSearch ? `?search=${encodeURIComponent(stockSearch)}` : ''
+      const res = await fetch(`/api/stocks/list${searchParam}`)
+      const data = await res.json()
+      setStockList(data)
+    }
+    
+    if (stockSearch || stockList.length === 0) {
+      const timeoutId = setTimeout(fetchStocks, 300)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [stockSearch])
+
+  // 添加一行手动录入
+  const addManualEntry = () => {
+    const today = new Date()
+    const dateStr = today.toISOString().split('T')[0].replace(/-/g, '')
+    const timeStr = today.toTimeString().slice(0, 5).replace(':', '')
+    
+    setManualEntries([...manualEntries, {
+      trade_date: dateStr,
+      trade_time: timeStr,
+      stock_code: '',
+      stock_name: '',
+      direction: 'buy',
+      quantity: 100,
+      price: 0,
+      amount: 0,
+      commission: 0,
+      stamp_duty: 0
+    }])
+  }
+
+  // 更新手动录入行
+  const updateManualEntry = (index: number, field: string, value: any) => {
+    const updated = [...manualEntries]
+    updated[index] = { ...updated[index], [field]: value }
+    
+    // 如果修改了证券代码，同步更新证券名称
+    if (field === 'stock_code') {
+      const stock = stockList.find(s => s.code === value)
+      if (stock) {
+        updated[index].stock_name = stock.name
+      }
+    }
+    
+    // 计算成交金额
+    if (field === 'quantity' || field === 'price') {
+      updated[index].amount = updated[index].quantity * updated[index].price
+      // 手续费估算（万分之3）
+      updated[index].commission = updated[index].amount * 0.0003
+      // 印花税（卖出时 万分之5）
+      updated[index].stamp_duty = updated[index].direction === 'sell' ? updated[index].amount * 0.0005 : 0
+    }
+    // 方向改变时更新印花税
+    if (field === 'direction') {
+      updated[index].stamp_duty = value === 'sell' ? updated[index].amount * 0.0005 : 0
+    }
+    
+    setManualEntries(updated)
+  }
+
+  // 删除手动录入行
+  const removeManualEntry = (index: number) => {
+    setManualEntries(manualEntries.filter((_, i) => i !== index))
+  }
+
+  // 提交手动录入数据
+  const handleManualSubmit = async () => {
+    if (!user) return
+    
+    // 验证数据
+    const validEntries = manualEntries.filter(entry => 
+      entry.stock_code && entry.quantity > 0 && entry.price > 0
+    )
+    
+    if (validEntries.length === 0) {
+      setImportResult({ success: false, message: '请至少填写一条有效的交易记录' })
+      return
+    }
+    
+    setSubmitting(true)
+    
+    try {
+      // 格式化数据
+      const trades = validEntries.map(entry => ({
+        user_id: user.id,
+        trade_time: `${entry.trade_date.slice(0, 4)}-${entry.trade_date.slice(4, 6)}-${entry.trade_date.slice(6, 8)}T${entry.trade_time.slice(0, 2)}:${entry.trade_time.slice(2, 4)}:00`,
+        stock_code: entry.stock_code,
+        stock_name: entry.stock_name,
+        direction: entry.direction,
+        quantity: entry.quantity,
+        price: entry.price,
+        amount: entry.amount,
+        commission: entry.commission,
+        stamp_duty: entry.stamp_duty
+      }))
+      
+      const { error } = await supabase.from('normalized_trades').insert(trades)
+      
+      if (error) {
+        throw error
+      }
+      
+      setImportResult({ success: true, message: `成功导入 ${trades.length} 条交易记录` })
+      setManualEntries([])
+    } catch (error: any) {
+      console.error('导入失败:', error)
+      setImportResult({ success: false, message: `导入失败: ${error.message}` })
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   // 解析CSV文件
   const parseCSV = (content: string) => {
@@ -384,13 +518,42 @@ export default function ImportPage() {
         </div>
       </header>
 
+      {/* Tab Navigation */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="inline-flex gap-1 p-1 bg-white rounded-xl border border-slate-200 shadow-sm w-fit">
+          <button
+            onClick={() => setActiveTab('import')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+              activeTab === 'import'
+                ? 'bg-blue-600 text-white shadow'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            导入数据
+          </button>
+          <button
+            onClick={() => setActiveTab('manual')}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+              activeTab === 'manual'
+                ? 'bg-blue-600 text-white shadow'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            手动录入
+          </button>
+        </div>
+      </div>
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Import Form */}
+          {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* File Upload Card */}
-            <div className="card p-6">
-              <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
+            {/* Tab Content */}
+            {activeTab === 'import' ? (
+              <div className="card p-6">
+                {/* File Upload Card */}
+                <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
                 <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
                 导入数据
               </h2>
@@ -511,10 +674,202 @@ export default function ImportPage() {
                 )}
               </button>
             </div>
+          ) : (
+            /* 手动录入表单 */
+            <div className="card p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                  手动录入交易记录
+                </h2>
+                <button
+                  onClick={addManualEntry}
+                  className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  添加一行
+                </button>
+              </div>
+
+              {/* 导入结果提示 */}
+              {importResult && (
+                <div className={`p-4 rounded-lg mb-6 ${importResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <div className="flex items-center gap-3">
+                    {importResult.success ? (
+                      <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                    <p className={`text-sm ${importResult.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {importResult.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* 手动录入表格 */}
+              {manualEntries.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50">
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">成交日期</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">成交时间</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">证券代码</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">证券名称</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">操作</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">数量</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">价格</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">金额</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">手续费</th>
+                        <th className="px-2 py-2 text-left text-slate-600 font-medium">印花税</th>
+                        <th className="px-2 py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {manualEntries.map((entry, index) => (
+                        <tr key={index} className="border-b border-slate-100">
+                          <td className="px-1 py-2">
+                            <input
+                              type="text"
+                              value={entry.trade_date}
+                              onChange={(e) => updateManualEntry(index, 'trade_date', e.target.value)}
+                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                              placeholder="YYYYMMDD"
+                            />
+                          </td>
+                          <td className="px-1 py-2">
+                            <input
+                              type="text"
+                              value={entry.trade_time}
+                              onChange={(e) => updateManualEntry(index, 'trade_time', e.target.value)}
+                              className="w-16 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                              placeholder="HHMM"
+                            />
+                          </td>
+                          <td className="px-1 py-2">
+                            <input
+                              type="text"
+                              value={entry.stock_code}
+                              onChange={(e) => updateManualEntry(index, 'stock_code', e.target.value)}
+                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                              placeholder="600000"
+                              list={`stock-list-${index}`}
+                            />
+                            <datalist id={`stock-list-${index}`}>
+                              {stockList.map(stock => (
+                                <option key={stock.code} value={stock.code}>
+                                  {stock.name}
+                                </option>
+                              ))}
+                            </datalist>
+                          </td>
+                          <td className="px-1 py-2">
+                            <input
+                              type="text"
+                              value={entry.stock_name}
+                              onChange={(e) => updateManualEntry(index, 'stock_name', e.target.value)}
+                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                              placeholder="股票名称"
+                            />
+                          </td>
+                          <td className="px-1 py-2">
+                            <select
+                              value={entry.direction}
+                              onChange={(e) => updateManualEntry(index, 'direction', e.target.value)}
+                              className="px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                            >
+                              <option value="buy">买入</option>
+                              <option value="sell">卖出</option>
+                            </select>
+                          </td>
+                          <td className="px-1 py-2">
+                            <input
+                              type="number"
+                              value={entry.quantity}
+                              onChange={(e) => updateManualEntry(index, 'quantity', parseInt(e.target.value) || 0)}
+                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                            />
+                          </td>
+                          <td className="px-1 py-2">
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={entry.price}
+                              onChange={(e) => updateManualEntry(index, 'price', parseFloat(e.target.value) || 0)}
+                              className="w-20 px-2 py-1 text-sm border border-slate-200 rounded focus:outline-none focus:border-blue-500"
+                            />
+                          </td>
+                          <td className="px-1 py-2 text-slate-600">
+                            {entry.amount.toFixed(2)}
+                          </td>
+                          <td className="px-1 py-2 text-slate-600">
+                            {entry.commission.toFixed(2)}
+                          </td>
+                          <td className="px-1 py-2 text-slate-600">
+                            {entry.stamp_duty.toFixed(2)}
+                          </td>
+                          <td className="px-1 py-2">
+                            <button
+                              onClick={() => removeManualEntry(index)}
+                              className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* 提交按钮 */}
+                  <div className="mt-6 flex justify-end">
+                    <button
+                      onClick={handleManualSubmit}
+                      disabled={submitting || manualEntries.length === 0}
+                      className="px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    >
+                      {submitting ? (
+                        <>
+                          <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          提交中...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          确认提交
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-slate-400">
+                  <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <p>点击"添加一行"开始录入交易记录</p>
+                </div>
+              )}
+            </div>
+            )}
           </div>
 
-          {/* Right Column - Instructions */}
           <div className="space-y-6">
+
             {/* Format Guide Card */}
             <div className="card p-6">
               <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
