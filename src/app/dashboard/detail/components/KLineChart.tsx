@@ -23,7 +23,6 @@ interface KLineChartProps {
 }
 
 export default function KLineChart({ klineData, trades }: KLineChartProps) {
-  // 计算移动平均线
   const calculateMA = (dayCount: number, data: KLineItem[]) => {
     const result: (number | null)[] = []
     for (let i = 0; i < data.length; i++) {
@@ -44,7 +43,6 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
     const initialStart = 90
     const initialEnd = 100
     
-    // 按日期分组买卖点
     const tradeMap = new Map<number, { buys: any[], sells: any[] }>()
     
     trades.forEach(t => {
@@ -62,7 +60,6 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
       }
     })
     
-    // 生成交易标记
     const tradeMarkers: any[] = []
     tradeMap.forEach((tradesAtIdx, idx) => {
       const hasBuy = tradesAtIdx.buys.length > 0
@@ -244,7 +241,8 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
           data: calculateMA(5, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1.5, color: '#f97316' }
+          lineStyle: { width: 1.5, color: '#f97316' },
+          itemStyle: { color: '#f97316' }
         },
         {
           name: 'MA10',
@@ -252,7 +250,8 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
           data: calculateMA(10, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1.5, color: '#8b5cf6' }
+          lineStyle: { width: 1.5, color: '#8b5cf6' },
+          itemStyle: { color: '#8b5cf6' }
         },
         {
           name: 'MA20',
@@ -260,7 +259,8 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
           data: calculateMA(20, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1.5, color: '#06b6d4' }
+          lineStyle: { width: 1.5, color: '#06b6d4' },
+          itemStyle: { color: '#06b6d4' }
         },
         {
           name: 'MA60',
@@ -268,9 +268,9 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
           data: calculateMA(60, klineData),
           smooth: true,
           showSymbol: false,
-          lineStyle: { width: 1.5, color: '#ec4899' }
+          lineStyle: { width: 1.5, color: '#ec4899' },
+          itemStyle: { color: '#ec4899' }
         },
-        // 买入标记
         {
           name: '买入',
           type: 'scatter',
@@ -293,7 +293,6 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
             fontWeight: 'bold'
           }
         },
-        // 卖出标记
         {
           name: '卖出',
           type: 'scatter',
@@ -304,9 +303,9 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
           symbol: 'circle',
           symbolSize: 18,
           itemStyle: { 
-            color: '#22c55e',
+            color: '#38bdf8',
             shadowBlur: 4,
-            shadowColor: 'rgba(34, 197, 94, 0.4)'
+            shadowColor: 'rgba(56, 189, 248, 0.4)'
           },
           label: {
             show: true,
@@ -316,7 +315,6 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
             fontWeight: 'bold'
           }
         },
-        // T+0标记
         {
           name: 'T+0',
           type: 'scatter',
@@ -350,28 +348,6 @@ export default function KLineChart({ klineData, trades }: KLineChartProps) {
           <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
           K线图
         </h2>
-        <div className="flex items-center gap-4 text-sm">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-red-500"></span>
-            <span className="text-slate-600">上涨</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-green-500"></span>
-            <span className="text-slate-600">下跌</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-red-500"></span>
-            <span className="text-slate-600">买入点</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-green-500"></span>
-            <span className="text-slate-600">卖出点</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-amber-500"></span>
-            <span className="text-slate-600">T+0</span>
-          </div>
-        </div>
       </div>
       
       {klineData.length > 0 ? (
