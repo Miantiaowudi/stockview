@@ -171,10 +171,10 @@ export default function ImportPage() {
         user_id: user.id,
         trade_time: `${currentEntry.trade_date}T${currentEntry.trade_time}:00`,
         stock_code: currentEntry.stock_code,
-        stock_name: currentEntry.stock_name,
         direction: currentEntry.direction,
         quantity: currentEntry.quantity,
-        price: currentEntry.price
+        price: currentEntry.price,
+        commission: currentEntry.quantity * currentEntry.price * 0.0003
       }
       
       const { error } = await supabase.from('normalized_trades').insert([trade])
