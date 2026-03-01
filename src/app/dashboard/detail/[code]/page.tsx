@@ -161,11 +161,63 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-slate-500">加载中...</p>
-        </div>
+      <div className="min-h-screen bg-slate-50">
+        {/* Header Skeleton */}
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-200 rounded-lg animate-pulse"></div>
+                <div>
+                  <div className="h-5 w-32 bg-slate-200 rounded animate-pulse mb-1"></div>
+                  <div className="h-3 w-20 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="h-8 w-24 bg-slate-200 rounded-lg animate-pulse"></div>
+                <div className="hidden sm:block h-6 w-32 bg-slate-200 rounded animate-pulse"></div>
+                <div className="h-8 w-16 bg-slate-200 rounded-lg animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* 统计卡片 Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl p-5 border border-slate-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-slate-200 rounded-lg animate-pulse"></div>
+                  <div className="h-4 w-16 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+                <div className="h-8 w-32 bg-slate-200 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* K线图 Skeleton */}
+          <div className="bg-white rounded-xl border border-slate-200 p-4 mb-8">
+            <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-4"></div>
+            <div className="h-96 bg-slate-100 rounded-lg animate-pulse"></div>
+          </div>
+
+          {/* 成交明细 Skeleton */}
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-4"></div>
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4">
+                  <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-16 bg-slate-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-16 bg-slate-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-12 bg-slate-200 rounded animate-pulse"></div>
+                  <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
