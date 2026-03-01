@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { getStockNames } from '@/lib/stockApi'
+import { getStockNames, getStockPrices, StockPrice } from '@/lib/stockApi'
 import Link from 'next/link'
 import KLineChart from '../components/KLineChart'
 import TradeTable from '../components/TradeTable'
@@ -34,6 +34,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   const [loading, setLoading] = useState(true)
   const [trades, setTrades] = useState<Trade[]>([])
   const [stockName, setStockName] = useState('')
+  const [stockPrice, setStockPrice] = useState<StockPrice | null>(null)
   const [klineData, setKlineData] = useState<KLineItem[]>([])
   
   const router = useRouter()
@@ -89,8 +90,27 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         console.error('加载交易数据失败:', error)
         return
       }
-
       setTrades(tradesData || [])
+      
+      // 计算持仓数量
+      const buyTradesData = (tradesData || []).filter((t: Trade) => t.direction === 'buy')
+      const sellTradesData = (tradesData || []).filter((t: Trade) => t.direction === 'sell')
+      const totalBuyQty = buyTradesData.reduce((sum: number, t: Trade) => sum + t.quantity, 0)
+      const totalSellQty = sellTradesData.reduce((sum: number, t: Trade) => sum + t.quantity, 0)
+      const holdQuantity = totalBuyQty - totalSellQty
+      
+      // 如果有持仓，获取实时价格
+      if (holdQuantity > 0) {
+        try {
+          const prices = await getStockPrices([stockCode])
+          if (prices[stockCode]) {
+            setStockPrice(prices[stockCode])
+          }
+        } catch (e) {
+          console.error('获取实时价格失败:', e)
+        }
+      }
+      
       try {
         const names = await getStockNames([stockCode])
         setStockName(names[stockCode] || stockCode)
@@ -101,17 +121,43 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     loadData()
   }, [user, stockCode, supabase])
 
+
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
-
   const buyTrades = trades.filter(t => t.direction === 'buy')
   const sellTrades = trades.filter(t => t.direction === 'sell')
   const totalBuy = buyTrades.reduce((sum, t) => sum + t.price * t.quantity, 0)
   const totalSell = sellTrades.reduce((sum, t) => sum + t.price * t.quantity, 0)
+  const totalBuyQty = buyTrades.reduce((sum, t) => sum + t.quantity, 0)
+  const totalSellQty = sellTrades.reduce((sum, t) => sum + t.quantity, 0)
+  const holdQuantity = totalBuyQty - totalSellQty
   const totalCommission = trades.reduce((sum, t) => sum + t.commission, 0)
-  const profitLoss = totalSell - totalBuy - totalCommission
+  
+  // 判断是否已清仓（持仓数量为0）
+  const isClosed = holdQuantity === 0
+  
+  let profitLoss = 0
+  let profitLossLabel = '盈亏'
+  
+  if (isClosed) {
+    // 已清仓：使用原有计算方式
+    // 盈亏 = 卖出总额 - 买入总额 - 手续费
+    profitLoss = totalSell - totalBuy - totalCommission
+    profitLossLabel = '盈亏'
+  } else {
+    // 未清仓：计算浮动盈亏
+    // 持仓成本 = 买入总额 - 卖出总额 + 手续费
+    const totalCost = totalBuy - totalSell + totalCommission
+    // 浮动盈亏 = 当前市值 - 持仓成本
+    if (stockPrice) {
+      const currentMarketValue = stockPrice.currentPrice * holdQuantity
+      profitLoss = currentMarketValue - totalCost
+    }
+  }
+
 
   if (loading) {
     return (
@@ -213,7 +259,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
                   )}
                 </svg>
               </div>
-              <span className="stat-card-label">盈亏</span>
+              <span className="stat-card-label">{profitLossLabel}</span>
             </div>
             <p className={`stat-card-value ${profitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
               {profitLoss >= 0 ? '+' : ''}¥{profitLoss.toFixed(2)}
