@@ -11,12 +11,13 @@ interface PositionListProps {
   positions: Position[]
   type: 'current' | 'cleared'
   showData?: boolean
+  loading?: boolean
 }
 
 type FilterType = 'all' | 'profit' | 'loss'
 type SortType = 'default' | 'pnl-asc' | 'pnl-desc' | 'time-asc' | 'time-desc'
 
-export default function PositionList({ positions, type, showData = true }: PositionListProps) {
+export default function PositionList({ positions, type, showData = true, loading = false }: PositionListProps) {
   const isCurrent = type === 'current'
   
   const [searchTerm, setSearchTerm] = useState('')
@@ -198,7 +199,34 @@ export default function PositionList({ positions, type, showData = true }: Posit
       </div>
       
       {/* Position Cards */}
-      {filteredPositions.length > 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border-2 border-slate-200 p-5">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="h-5 w-24 bg-slate-200 rounded animate-pulse mb-2"></div>
+                  <div className="h-4 w-16 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+                <div className="text-right">
+                  <div className="h-6 w-20 bg-slate-200 rounded animate-pulse mb-1"></div>
+                  <div className="h-4 w-12 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                <div>
+                  <div className="h-3 w-12 bg-slate-200 rounded animate-pulse mb-1"></div>
+                  <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+                <div>
+                  <div className="h-3 w-12 bg-slate-200 rounded animate-pulse mb-1"></div>
+                  <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredPositions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredPositions.map((pos, i) => (
             <PositionCard key={i} position={pos} type={type} showData={showData} />

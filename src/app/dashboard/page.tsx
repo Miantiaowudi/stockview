@@ -536,11 +536,11 @@ export default function AnalyticsPage() {
 
         {/* Position Lists */}
         {activeTab === 'current' && (
-          <PositionList positions={currentPositions} type="current" showData={showData} />
+          <PositionList positions={currentPositions} type="current" showData={showData} loading={loading} />
         )}
 
         {activeTab === 'cleared' && (
-          <PositionList positions={clearedPositions} type="cleared" showData={showData} />
+          <PositionList positions={clearedPositions} type="cleared" showData={showData} loading={loading} />
         )}
       </main>
     </div>
