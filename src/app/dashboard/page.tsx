@@ -60,9 +60,20 @@ export default function AnalyticsPage() {
   const [totalBuy, setTotalBuy] = useState(0)
   const [totalSell, setTotalSell] = useState(0)
   const [currentPnl, setCurrentPnl] = useState(0)
+  const [showData, setShowData] = useState(true)
   
   const router = useRouter()
+
+  // 掩码显示
+  // 掩码显示
+  const formatValue = (value: number, showSign = false) => {
+    if (!showData) return '****'
+    const formatted = value.toLocaleString()
+    return showSign && value > 0 ? '+' + formatted : formatted
+  }
+  
   const supabase = createClient()
+
 
   // 检查用户登录
   useEffect(() => {
@@ -317,7 +328,24 @@ export default function AnalyticsPage() {
           <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
             总体概览
+            <button
+              onClick={() => setShowData(!showData)}
+              className="ml-auto p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              title={showData ? '隐藏数据' : '显示数据'}
+            >
+              {showData ? (
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                </svg>
+              )}
+            </button>
           </h2>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {/* 总买入 */}
             <div className="stat-card stagger-item">
@@ -329,7 +357,7 @@ export default function AnalyticsPage() {
                 </div>
                 <span className="stat-card-label">总买入</span>
               </div>
-              <p className="stat-card-value">¥{totalBuy.toLocaleString()}</p>
+              <p className="stat-card-value">¥{formatValue(totalBuy)}</p>
             </div>
 
             {/* 总卖出 */}
@@ -342,7 +370,7 @@ export default function AnalyticsPage() {
                 </div>
                 <span className="stat-card-label">总卖出</span>
               </div>
-              <p className="stat-card-value">¥{totalSell.toLocaleString()}</p>
+              <p className="stat-card-value">¥{formatValue(totalSell)}</p>
             </div>
 
             {/* 手续费合计 */}
@@ -355,7 +383,7 @@ export default function AnalyticsPage() {
                 </div>
                 <span className="stat-card-label">手续费合计</span>
               </div>
-              <p className="stat-card-value text-slate-700">¥{(totalSell - totalBuy - totalPnL).toFixed(2)}</p>
+              <p className="stat-card-value text-slate-700">¥{formatValue(totalSell - totalBuy - totalPnL)}</p>
             </div>
 
             {/* 清仓盈亏 */}
@@ -373,7 +401,7 @@ export default function AnalyticsPage() {
                 <span className="stat-card-label">清仓盈亏</span>
               </div>
               <p className={`stat-card-value ${totalPnL >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {totalPnL >= 0 ? '+' : ''}¥{totalPnL.toLocaleString()}
+                ¥{formatValue(totalPnL, true)}
               </p>
             </div>
 
@@ -392,7 +420,7 @@ export default function AnalyticsPage() {
                 <span className="stat-card-label">当日盈亏</span>
               </div>
               <p className={`stat-card-value ${currentPnl >= 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {currentPnl >= 0 ? '+' : ''}¥{currentPnl.toLocaleString()}
+                ¥{formatValue(currentPnl, true)}
               </p>
             </div>
           </div>
