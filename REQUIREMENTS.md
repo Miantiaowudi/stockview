@@ -8,7 +8,7 @@
 
 - **前端**: Next.js 16 (App Router) + Tailwind CSS + TypeScript
 - **UI组件**: antd V5 (Select, Modal, Form, DatePicker, TimePicker等)
-- **图表**: ECharts (K线图), Recharts (收益率曲线)
+- **图表**: ECharts
 - **后端**: Next.js API Routes
 - **数据库**: Supabase (PostgreSQL)
 - **股票数据**: 东方财富 (East Money) API
@@ -132,7 +132,7 @@
 2. Git 自动化：每次审核通过后生成规范 Commit Message
 3. 技术选型：优先稳定，高效的方案
 
-## 待办事项
+
 
 - [ ] 收益率曲线图
 - [ ] 仓位占比图
