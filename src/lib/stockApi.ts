@@ -1,6 +1,4 @@
-// 根据股票代码获取股票名称
 // 使用内部API路由（服务器端调用，避免CORS问题）
-
 const API_BASE = '/api/stocks'
 
 // 股票价格信息
@@ -14,17 +12,6 @@ export interface StockPrice {
   lowPrice: number
   volume: number
   amount: number
-}
-
-export async function getStockName(stockCode: string): Promise<string> {
-  try {
-    const response = await fetch(`${API_BASE}?codes=${stockCode}`)
-    const data = await response.json()
-    return data[stockCode] || stockCode
-  } catch (error) {
-    console.error('获取股票名称失败:', error)
-    return stockCode
-  }
 }
 
 // 批量获取股票名称
