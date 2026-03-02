@@ -1,150 +1,70 @@
 import { NextResponse } from 'next/server'
 
-// A股主要股票列表（代码前缀：6=上海主板，0=深圳主板，3=创业板）
-const A_SHARE_STOCKS = [
-  { code: '600000', name: '浦发银行' },
-  { code: '600016', name: '民生银行' },
-  { code: '600019', name: '宝钢股份' },
-  { code: '600028', name: '中国石化' },
-  { code: '600030', name: '中信证券' },
-  { code: '600036', name: '招商银行' },
-  { code: '600048', name: '保利发展' },
-  { code: '600050', name: '中国联通' },
-  { code: '600104', name: '上汽集团' },
-  { code: '600111', name: '北方稀土' },
-  { code: '600150', name: '中国船舶' },
-  { code: '600176', name: '中国巨石' },
-  { code: '600183', name: '生益科技' },
-  { code: '600196', name: '复星医药' },
-  { code: '600276', name: '恒瑞医药' },
-  { code: '600309', name: '万华化学' },
-  { code: '600406', name: '国电南瑞' },
-  { code: '600436', name: '片仔癀' },
-  { code: '600438', name: '通威股份' },
-  { code: '600487', name: '亨通光电' },
-  { code: '600519', name: '贵州茅台' },
-  { code: '600547', name: '山东黄金' },
-  { code: '600585', name: '海螺水泥' },
-  { code: '600587', name: '新华医疗' },
-  { code: '600690', name: '青岛海尔' },
-  { code: '600703', name: '三安光电' },
-  { code: '600745', name: '闻泰科技' },
-  { code: '600760', name: '航发动力' },
-  { code: '600809', name: '山西汾酒' },
-  { code: '600837', name: '海通证券' },
-  { code: '600887', name: '伊利股份' },
-  { code: '600893', name: '中航飞机' },
-  { code: '600900', name: '长江电力' },
-  { code: '600905', name: '三峡能源' },
-  { code: '600918', name: '中金公司' },
-  { code: '600989', name: '宝信软件' },
-  { code: '601006', name: '大秦铁路' },
-  { code: '601012', name: '隆基绿能' },
-  { code: '601088', name: '中国神华' },
-  { code: '601118', name: '海南橡胶' },
-  { code: '601166', name: '兴业银行' },
-  { code: '601169', name: '北京银行' },
-  { code: '601288', name: '农业银行' },
-  { code: '601318', name: '中国平安' },
-  { code: '601328', name: '交通银行' },
-  { code: '601398', name: '工商银行' },
-  { code: '601488', name: '兰州银行' },
-  { code: '601528', name: '瑞丰银行' },
-  { code: '601601', name: '中国太保' },
-  { code: '601628', name: '中国人寿' },
-  { code: '601668', name: '中国建筑' },
-  { code: '601688', name: '中国中车' },
-  { code: '601698', name: '中国卫通' },
-  { code: '601728', name: '中国电建' },
-  { code: '601766', name: '中国中铁' },
-  { code: '601788', name: '光大证券' },
-  { code: '601818', name: '光大银行' },
-  { code: '601857', name: '中国石油' },
-  { code: '601888', name: '中国中铁' },
-  { code: '601899', name: '紫金矿业' },
-  { code: '601919', name: '中远海控' },
-  { code: '601939', name: '建设银行' },
-  { code: '601985', name: '中国核电' },
-  { code: '601988', name: '中国银行' },
-  { code: '601989', name: '中国重工' },
-  { code: '601995', name: '中金黄金' },
-  { code: '603259', name: '药明康德' },
-  { code: '603259', name: '药明康德' },
-  { code: '603799', name: '华友钴业' },
-  { code: '603986', name: '兆易创新' },
-  { code: '603936', name: '瑞芯微' },
-  { code: '000001', name: '平安银行' },
-  { code: '000002', name: '万科A' },
-  { code: '000063', name: '中兴通讯' },
-  { code: '000100', name: 'TCL科技' },
-  { code: '000333', name: '美的集团' },
-  { code: '000338', name: '潍柴动力' },
-  { code: '000429', name: '粤高速A' },
-  { code: '000498', name: '山东路桥' },
-  { code: '000538', name: '云南白药' },
-  { code: '000581', name: '威孚高科' },
-  { code: '000596', name: '古井贡酒' },
-  { code: '000651', name: '格力电器' },
-  { code: '000661', name: '长春高新' },
-  { code: '000725', name: '京东方A' },
-  { code: '000768', name: '中航飞机' },
-  { code: '000799', name: '金种子酒' },
-  { code: '000858', name: '五粮液' },
-  { code: '000876', name: '新希望' },
-  { code: '000887', name: '中鼎股份' },
-  { code: '000895', name: '系数未名' },
-  { code: '000938', name: '紫光股份' },
-  { code: '000966', name: '长源电力' },
-  { code: '000968', name: '蓝焰控股' },
-  { code: '000969', name: '安泰科技' },
-  { code: '000977', name: '浪潮信息' },
-  { code: '000999', name: '华润三九' },
-  { code: '002001', name: '新和成' },
-  { code: '002027', name: '分众传媒' },
-  { code: '002044', name: '江苏国泰' },
-  { code: '002049', name: '紫光国微' },
-  { code: '002050', name: '浙江龙盛' },
-  { code: '002142', name: '雷科防务' },
-  { code: '002230', name: '科大国创' },
-  { code: '002236', name: '大华股份' },
-  { code: '002252', name: '莱宝高科' },
-  { code: '002304', name: '南山控股' },
-  { code: '002311', name: '海大集团' },
-  { code: '002352', name: '民生控股' },
-  { code: '002371', name: '北方华创' },
-  { code: '002415', name: '海康威视' },
-  { code: '002460', name: '赣锋锂业' },
-  { code: '002475', name: '立讯精密' },
-  { code: '002493', name: '荣盛石化' },
-  { code: '002594', name: '比亚迪' },
-  { code: '002601', name: '龙蟒佰利' },
-  { code: '002714', name: '牧原股份' },
-  { code: '002736', name: '国光电器' },
-  { code: '002812', name: '恩捷股份' },
-  { code: '002841', name: '视源股份' },
-  { code: '002851', name: '麦格米特' },
-  { code: '002866', name: '传艺科技' },
-  { code: '002892', name: '科华恒盛' },
-  { code: '002925', name: '盈趣科技' },
-  { code: '300001', name: '睿智微装' },
-  { code: '300003', name: '乐普医疗' },
-  { code: '300015', name: '爱尔眼科' },
-  { code: '300033', name: '同花顺' },
-  { code: '300059', name: '东方财富' },
-  { code: '300122', name: '智飞生物' },
-  { code: '300124', name: '汇川技术' },
-  { code: '300142', name: '宁波方正' },
-  { code: '300212', name: '易瑞生物' },
-  { code: '300223', name: '晶瑞股份' },
-  { code: '300347', name: '泰格医药' },
-  { code: '300408', name: '石英股份' },
-  { code: '300459', name: '金科文化' },
-  { code: '300496', name: '中科创达' },
-  { code: '300529', name: '健帆生物' },
-  { code: '300750', name: '宁德时代' },
-  { code: '300759', name: '理财金字塔' },
-  { code: '300896', name: '有利网' },
-]
+// In-memory cache for stock list
+let stockCache: { data: any[]; timestamp: number } | null = null
+const CACHE_DURATION = 1000 * 60 * 60 // 1 hour
+
+// Fetch stock list from East Money API
+async function fetchStockList(): Promise<any[]> {
+  // Return cached data if available
+  if (stockCache && Date.now() - stockCache.timestamp < CACHE_DURATION) {
+    return stockCache.data
+  }
+
+  try {
+    // East Money API - 获取沪深A股股票列表
+    const url = 'https://push2.eastmoney.com/api/qt/clist/get'
+    const params = new URLSearchParams({
+      fid: 'f184',       // 按股票代码排序
+      po: '1',           // 正序
+      pz: '6000',        // 每页数量（沪深A股总共约5000只）
+      pn: '1',           // 页码
+      np: '1',           // 新版API
+      fltt: '2',         // 浮点类型
+      invt: '2',         // 沪深A股
+      fields: 'f12,f14', // 股票代码、股票名称
+      ut: 'b2884a393a59ad64002292a3e90d46a5', // 固定参数
+      fs: 'm:0+t:6+f:!2,m:0+t:13+f:!2,m:0+t:80+f:!2,m:1+t:2+f:!2,m:1+t:23+f:!2,m:0+t:7+f:!2,m:1+t:3+f:!2' // 沪深A股
+    })
+
+    const response = await fetch(`${url}?${params.toString()}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      next: { revalidate: 3600 } // Cache for 1 hour
+    })
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    
+    if (data.data?.diff) {
+      const stocks = data.data.diff.map((item: any) => ({
+        code: item.f12,
+        name: item.f14
+      }))
+      
+      // Update cache
+      stockCache = {
+        data: stocks,
+        timestamp: Date.now()
+      }
+      
+      return stocks
+    }
+    
+    return []
+  } catch (error) {
+    console.error('Failed to fetch stock list:', error)
+    // Return cached data if fetch fails (even if expired)
+    if (stockCache) {
+      return stockCache.data
+    }
+    return []
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -152,9 +72,11 @@ export async function GET(request: Request) {
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '50')
 
-  let stocks = A_SHARE_STOCKS
+  // Fetch all stocks from external API
+  const allStocks = await fetchStockList()
 
   // Filter by search term
+  let stocks = allStocks
   if (search) {
     stocks = stocks.filter(
       stock => 
