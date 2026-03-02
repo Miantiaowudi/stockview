@@ -156,49 +156,7 @@ export default function ImportPage() {
         )}
 
         {activeTab === 'import' && (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
-                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  CSV格式说明
-                </h3>
-                <p className="text-sm text-slate-600 mb-3">请确保CSV文件包含以下表头（顺序无关）：</p>
-                <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                  <code className="text-xs text-slate-600 break-all">
-                    成交日期, 成交时间, 证券代码, 证券名称, 操作, 成交数量, 成交均价, 成交金额, 手续费, 印花税
-                  </code>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-slate-200 p-5">
-                <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  导入说明
-                </h3>
-                <ul className="text-sm text-slate-600 space-y-2">
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">1</span>
-                    <span>从券商客户端导出CSV格式的交割单</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">2</span>
-                    <span>确保CSV文件包含标准表头</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">3</span>
-                    <span>导入后支持自动去重</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <ImportTab user={user} supabase={supabase} onImportComplete={handleImportComplete} />
-          </>
+          <ImportTab user={user} supabase={supabase} onImportComplete={handleImportComplete} />
         )}
 
         {activeTab === 'manual' && (

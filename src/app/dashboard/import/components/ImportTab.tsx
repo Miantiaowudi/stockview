@@ -1,22 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Upload, Table, Button, Card, Alert, Space } from 'antd'
-import { UploadOutlined, CheckOutlined } from '@ant-design/icons'
-import type { UploadProps } from 'antd'
 
 const STANDARD_COLUMNS = [
   '成交日期', '成交时间', '证券代码', '证券名称', '操作', 
   '成交数量', '成交均价', '成交金额', '手续费', '印花税'
 ]
-
-const CSV_HELP_TEXT = `支持标准CSV格式文件导入，表头需包含以下字段：
-成交日期、成交时间、证券代码、证券名称、操作、成交数量、成交均价、成交金额、手续费、印花税
-
-日期格式：YYYYMMDD 或 YYYY-MM-DD
-时间格式：HHmmss 或 HH:MM:SS
-操作：买入/卖出`
 
 const parseRow = (row: string[]) => {
   const date = row[0]
@@ -47,8 +37,9 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
   const [uploading, setUploading] = useState(false)
   const [previewData, setPreviewData] = useState<any[]>([])
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null)
-  const [fileList, setFileList] = useState<any[]>([])
   const [currentFile, setCurrentFile] = useState<File | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const parseCSV = (content: string) => {
     const lines = content.split('\n').filter(line => line.trim())
@@ -93,17 +84,13 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
     return trades
   }
 
-  const handleFileChange: UploadProps['onChange'] = async (info) => {
-    const file = info.fileList[0]?.originFileObj || info.fileList[0]
-    if (!file) return
-
-    setFileList(info.fileList)
-    setCurrentFile(file as File)
+  const handleFileContent = async (file: File) => {
+    setCurrentFile(file)
     setImportResult(null)
     setPreviewData([])
 
     try {
-      let content = await (file as File).text()
+      let content = await file.text()
       
       const hasChinese = (str: string) => /[\u4e00-\u9fa5]/.test(str.slice(0, 500))
       if (!hasChinese(content)) {
@@ -111,7 +98,7 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
           const reader = new FileReader()
           reader.onload = () => resolve(reader.result as string)
           reader.onerror = () => reject(reader.error)
-          reader.readAsText(file as File, 'gbk')
+          reader.readAsText(file, 'gbk')
         })
       }
       
@@ -124,6 +111,33 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
 
     } catch (error) {
       setImportResult({ success: false, message: '文件读取失败' })
+    }
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    await handleFileContent(file)
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file && file.name.endsWith('.csv')) {
+      await handleFileContent(file)
+    } else {
+      setImportResult({ success: false, message: '请上传 CSV 格式文件' })
     }
   }
 
@@ -201,7 +215,6 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
       if (uniqueTrades.length === 0) {
         setImportResult({ success: true, message: '没有新的交易记录需要导入（已全部存在）' })
         setUploading(false)
-        setFileList([])
         setPreviewData([])
         setCurrentFile(null)
         return
@@ -242,7 +255,6 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
         message: `导入成功！共 ${uniqueTrades.length} 条交易记录` 
       })
 
-      setFileList([])
       setPreviewData([])
       setCurrentFile(null)
       onImportComplete?.(`导入成功！共 ${uniqueTrades.length} 条交易记录`)
@@ -281,71 +293,160 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
   ]
 
   return (
-    <Card 
-      title={<span>导入数据</span>}
-      extra={
-        <Upload
-          accept=".csv"
-          fileList={fileList}
-          onChange={handleFileChange}
-          beforeUpload={() => false}
-          maxCount={1}
-          showUploadList={false}
-        >
-          <Button icon={<UploadOutlined />}>点击上传 CSV 文件</Button>
-        </Upload>
-      }
-    >
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        {importResult && (
-          <Alert
-            message={importResult.message}
-            type={importResult.success ? 'success' : 'error'}
-            showIcon
-          />
-        )}
+    <div className="bg-white rounded-xl border border-slate-200 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+          <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+          导入数据
+        </h2>
+        
+        {/* File Upload Button */}
+        <div>
+          <label className="block">
+            <span className="sr-only">选择CSV文件</span>
+            <div className="flex items-center justify-center">
+              <label 
+                htmlFor="file-upload" 
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-colors duration-200"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span className="text-sm font-medium">点击上传 CSV 文件</span>
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                ref={fileInputRef}
+                accept=".csv"
+                onChange={handleFileChange}
+                className="hidden"
+                disabled={uploading}
+              />
+            </div>
+          </label>
+        </div>
+      </div>
 
-        {previewData.length > 0 && (
-          <div>
-            <h4 style={{ marginBottom: 12 }}>预览（前5条）</h4>
-            <Table 
-              columns={previewColumns} 
-              dataSource={previewData} 
-              pagination={false}
-              size="small"
-              scroll={{ x: 1000 }}
-            />
+      {/* Result Message */}
+      {importResult && (
+        <div className={`mb-6 p-4 rounded-lg border ${
+          importResult.success 
+            ? 'bg-green-50 border-green-200 text-green-700' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          <div className="flex items-center gap-3">
+            {importResult.success ? (
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+            <p className="text-sm">{importResult.message}</p>
           </div>
-        )}
+        </div>
+      )}
 
-        {previewData.length === 0 && !importResult && (
-          <div 
-            style={{
-              background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
-              borderRadius: 12,
-              padding: '48px 24px',
-              textAlign: 'center',
-              border: '1px solid #e8e8e8'
-            }}
-          >
-            <UploadOutlined style={{ fontSize: 48, color: '#1890ff', marginBottom: 16, display: 'block' }} />
-            <p style={{ color: '#666', fontSize: 14, margin: 0, whiteSpace: 'pre-line', lineHeight: 1.8 }}>
-              {CSV_HELP_TEXT}
+      {/* Preview Table */}
+      {previewData.length > 0 && (
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-slate-700 mb-3">预览（前5条）</h4>
+          <div className="overflow-x-auto border border-slate-200 rounded-lg">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  {previewColumns.map((col: any) => (
+                    <th 
+                      key={col.key} 
+                      className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
+                      style={{ width: col.width }}
+                    >
+                      {col.title}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {previewData.map((row) => (
+                  <tr key={row.key} className="hover:bg-slate-50">
+                    {previewColumns.map((col: any) => (
+                      <td 
+                        key={col.key} 
+                        className="px-3 py-2 text-sm text-slate-600"
+                        style={{ width: col.width }}
+                      >
+                        {col.render ? col.render(row[col.dataIndex], row) : row[col.dataIndex]}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State - Drag & Drop Area */}
+      {previewData.length === 0 && !importResult && (
+        <div 
+          className={`mb-6 border-2 border-dashed rounded-xl transition-all duration-200 ${
+            isDragging 
+              ? 'border-blue-400 bg-blue-50' 
+              : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <div className={`w-12 h-12 mb-4 rounded-full flex items-center justify-center transition-colors ${
+              isDragging ? 'bg-blue-100' : 'bg-slate-100'
+            }`}>
+              <svg className={`w-6 h-6 ${isDragging ? 'text-blue-500' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            <p className="text-sm text-slate-600 mb-2">
+              <span className="font-semibold text-blue-600">点击上传</span> 或拖拽文件
             </p>
+            <p className="text-xs text-slate-400">支持 CSV 格式文件</p>
           </div>
-        )}
+        </div>
+      )}
 
-        <Button
-          type="primary"
-          icon={<CheckOutlined />}
-          onClick={handleImport}
-          loading={uploading}
-          disabled={previewData.length === 0}
-          block
-        >
-          确认导入
-        </Button>
-      </Space>
-    </Card>
+      {/* Submit Button */}
+      <button
+        onClick={handleImport}
+        disabled={uploading || previewData.length === 0}
+        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+          previewData.length === 0
+            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            : uploading
+              ? 'bg-blue-600 text-white cursor-waiting'
+              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/40'
+        }`}
+      >
+        {uploading ? (
+          <>
+            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            导入中...
+          </>
+        ) : (
+          <>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            确认导入
+          </>
+        )}
+      </button>
+    </div>
   )
 }
