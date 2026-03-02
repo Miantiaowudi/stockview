@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -9,9 +9,28 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [initializing, setInitializing] = useState(true)
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        router.replace('/dashboard')
+        return
+      }
+      setInitializing(false)
+    }
+    checkUser()
+  }, [supabase, router])
+
+  // Show nothing while checking
+  if (initializing) {
+    return null
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,7 +45,6 @@ export default function LoginPage() {
     if (error) {
       const msg = error.message.toLowerCase()
       if (msg.includes('invalid') || msg.includes('credentials')) {
-        // 通用错误，先提示用户检查信息，并引导注册
         setError('登录失败，请检查邮箱和密码是否正确。如未注册，请先前往注册。')
       } else {
         setError(error.message)
