@@ -48,7 +48,7 @@ export default function ImportPage() {
       <div className="min-h-screen bg-slate-50">
         {/* Header Skeleton */}
         <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-slate-200 rounded-lg animate-pulse"></div>
@@ -62,37 +62,16 @@ export default function ImportPage() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-6"></div>
-                <div className="h-32 bg-slate-100 rounded-xl animate-pulse mb-6"></div>
-                <div className="h-4 w-32 bg-slate-200 rounded animate-pulse mb-3"></div>
-                <div className="space-y-2">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="h-8 bg-slate-100 rounded animate-pulse"></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="space-y-6">
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-4"></div>
-                <div className="h-10 bg-slate-100 rounded-lg animate-pulse mb-4"></div>
-                <div className="space-y-2">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="h-16 bg-slate-100 rounded-lg animate-pulse"></div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <div className="h-6 w-20 bg-slate-200 rounded animate-pulse mb-4"></div>
-                <div className="space-y-3">
-                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-4 bg-slate-100 rounded animate-pulse"></div>
-                  ))}
-                </div>
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
+              <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-6"></div>
+              <div className="h-32 bg-slate-100 rounded-xl animate-pulse mb-6"></div>
+              <div className="h-4 w-32 bg-slate-200 rounded animate-pulse mb-3"></div>
+              <div className="space-y-2">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="h-8 bg-slate-100 rounded animate-pulse"></div>
+                ))}
               </div>
             </div>
           </div>
@@ -105,7 +84,7 @@ export default function ImportPage() {
     <div className="min-h-screen bg-slate-50 page-enter">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
@@ -137,7 +116,7 @@ export default function ImportPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <div className="inline-flex gap-1 p-1 bg-white rounded-xl border border-slate-200 shadow-sm w-fit">
           <button
             onClick={() => setActiveTab('import')}
@@ -162,83 +141,80 @@ export default function ImportPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Tab Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {importMessage && (
-              <div className="p-4 rounded-lg bg-green-50 border border-green-200">
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <p className="text-sm text-green-700">{importMessage}</p>
-                </div>
-              </div>
-            )}
-            
-            {activeTab === 'import' ? (
-              <ImportTab 
-                user={user} 
-                supabase={supabase}
-                onImportComplete={handleImportComplete}
-              />
-            ) : (
-              <ManualEntryTab 
-                user={user} 
-                supabase={supabase}
-                onImportComplete={handleImportComplete}
-              />
-            )}
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Success Message */}
+        {importMessage && (
+          <div className="mb-6 p-4 rounded-lg bg-green-50 border border-green-200">
+            <div className="flex items-center gap-3">
+              <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <p className="text-sm text-green-700">{importMessage}</p>
+            </div>
           </div>
+        )}
 
-          {/* Right Column - Only show help on import tab */}
-          {activeTab === 'import' && (
+        {/* Tab Content */}
+        {activeTab === 'import' ? (
+          <>
+            {/* Import Tab Content */}
             <div className="space-y-6">
-              {/* Format Guide Card */}
-              <div className="card p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                  CSV格式说明
-                </h2>
-                <div className="text-sm text-slate-600">
-                  <p className="mb-3">请确保CSV文件包含以下表头（顺序无关）：</p>
+              {/* Help Cards - Only show on import tab */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    CSV格式说明
+                  </h3>
+                  <p className="text-sm text-slate-600 mb-3">请确保CSV文件包含以下表头（顺序无关）：</p>
                   <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                     <code className="text-xs text-slate-600 break-all">
                       成交日期, 成交时间, 证券代码, 证券名称, 操作, 成交数量, 成交均价, 成交金额, 手续费, 印花税
                     </code>
                   </div>
                 </div>
+
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <h3 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    导入说明
+                  </h3>
+                  <ul className="text-sm text-slate-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">1</span>
+                      <span>从券商客户端导出CSV格式的交割单</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">2</span>
+                      <span>确保CSV文件包含标准表头</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">3</span>
+                      <span>导入后支持自动去重</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
 
-              {/* Instructions Card */}
-              <div className="card p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                  <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                  导入说明
-                </h2>
-                <ul className="text-sm text-slate-600 space-y-3">
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">1</span>
-                    <span>从券商客户端导出CSV格式的交割单</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">2</span>
-                    <span>确保CSV文件包含标准表头</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">3</span>
-                    <span>导入后支持自动去重，相同记录不会重复导入</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">4</span>
-                    <span>导入完成后可在"账户分析"查看统计数据</span>
-                  </li>
-                </ul>
-              </div>
+              <ImportTab 
+                user={user} 
+                supabase={supabase}
+                onImportComplete={handleImportComplete}
+              />
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          /* Manual Entry Tab */
+          <ManualEntryTab 
+            user={user} 
+            supabase={supabase}
+            onImportComplete={handleImportComplete}
+          />
+        )}
       </main>
     </div>
   )
