@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
+    "antd": "^6.3.1",
     "echarts": "^6.0.0",
     "echarts-for-react": "^3.0.6",
     "lightweight-charts": "^5.1.0",
