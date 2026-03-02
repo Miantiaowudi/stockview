@@ -267,33 +267,29 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
   }
 
   const previewColumns = [
-    { title: '成交日期', dataIndex: 'trade_date', key: 'trade_date', width: 100 },
-    { title: '成交时间', dataIndex: 'trade_time', key: 'trade_time', width: 80 },
-    { title: '证券代码', dataIndex: 'stock_code', key: 'stock_code', width: 80 },
-    { title: '证券名称', dataIndex: 'stock_name', key: 'stock_name', width: 80 },
+    { title: '成交日期', dataIndex: 'trade_date', key: 'trade_date' },
+    { title: '成交时间', dataIndex: 'trade_time', key: 'trade_time' },
+    { title: '证券代码', dataIndex: 'stock_code', key: 'stock_code' },
+    { title: '证券名称', dataIndex: 'stock_name', key: 'stock_name' },
     { 
       title: '操作', 
       dataIndex: 'direction', 
-      key: 'direction', 
-      width: 80,
+      key: 'direction',
       render: (text: string, record: any) => (
-        <span style={{ 
-          color: record.direction_type === 'buy' ? '#52c41a' : '#ff4d4f',
-          fontWeight: 500
-        }}>
+        <span className={`badge ${record.direction_type === 'buy' ? 'badge-buy' : 'badge-sell'}`}>
           {text}
         </span>
       )
     },
-    { title: '数量', dataIndex: 'quantity', key: 'quantity', width: 80 },
-    { title: '价格', dataIndex: 'price', key: 'price', width: 80 },
-    { title: '金额', dataIndex: 'amount', key: 'amount', width: 100 },
-    { title: '手续费', dataIndex: 'commission', key: 'commission', width: 80 },
-    { title: '印花税', dataIndex: 'stamp_duty', key: 'stamp_duty', width: 80 },
+    { title: '数量', dataIndex: 'quantity', key: 'quantity' },
+    { title: '价格', dataIndex: 'price', key: 'price' },
+    { title: '金额', dataIndex: 'amount', key: 'amount' },
+    { title: '手续费', dataIndex: 'commission', key: 'commission' },
+    { title: '印花税', dataIndex: 'stamp_duty', key: 'stamp_duty' },
   ]
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-6">
+    <div className="card p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
@@ -355,30 +351,22 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
       {previewData.length > 0 && (
         <div className="mb-6">
           <h4 className="text-sm font-medium text-slate-700 mb-3">预览（前5条）</h4>
-          <div className="overflow-x-auto border border-slate-200 rounded-lg">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
+          <div className="table-container">
+            <table className="table">
+              <thead>
                 <tr>
                   {previewColumns.map((col: any) => (
-                    <th 
-                      key={col.key} 
-                      className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"
-                      style={{ width: col.width }}
-                    >
+                    <th key={col.key}>
                       {col.title}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-slate-200">
+              <tbody>
                 {previewData.map((row) => (
-                  <tr key={row.key} className="hover:bg-slate-50">
+                  <tr key={row.key}>
                     {previewColumns.map((col: any) => (
-                      <td 
-                        key={col.key} 
-                        className="px-3 py-2 text-sm text-slate-600"
-                        style={{ width: col.width }}
-                      >
+                      <td key={col.key}>
                         {col.render ? col.render(row[col.dataIndex], row) : row[col.dataIndex]}
                       </td>
                     ))}
@@ -419,34 +407,36 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
       )}
 
       {/* Submit Button */}
-      <button
-        onClick={handleImport}
-        disabled={uploading || previewData.length === 0}
-        className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-          previewData.length === 0
-            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            : uploading
-              ? 'bg-blue-600 text-white cursor-waiting'
-              : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/40'
-        }`}
-      >
-        {uploading ? (
-          <>
-            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            导入中...
-          </>
-        ) : (
-          <>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-            确认导入
-          </>
-        )}
-      </button>
+      {previewData.length > 0 && (
+        <div className="flex justify-center">
+          <button
+            onClick={handleImport}
+            disabled={uploading}
+            className={`py-3 px-8 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+              uploading
+                ? 'bg-blue-600 text-white cursor-waiting'
+                : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/40'
+            }`}
+          >
+            {uploading ? (
+              <>
+                <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                导入中...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                确认导入
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

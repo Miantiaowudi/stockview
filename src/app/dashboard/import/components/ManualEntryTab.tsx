@@ -206,28 +206,9 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
     setManualEntries(manualEntries.filter(item => item.key !== key))
   }
 
-  const columns = [
-    { title: '成交日期', dataIndex: 'trade_date', key: 'trade_date', width: 120 },
-    { title: '成交时间', dataIndex: 'trade_time', key: 'trade_time', width: 100 },
-    { title: '证券代码', dataIndex: 'stock_code', key: 'stock_code', width: 100 },
-    { title: '证券名称', dataIndex: 'stock_name', key: 'stock_name', width: 100 },
-    { 
-      title: '操作', 
-      dataIndex: 'direction', 
-      key: 'direction', 
-      width: 80,
-    },
-    { title: '数量', dataIndex: 'quantity', key: 'quantity', width: 80 },
-    { title: '价格', dataIndex: 'price', key: 'price', width: 100 },
-    { title: '金额', dataIndex: 'amount', key: 'amount', width: 120 },
-    { title: '手续费', dataIndex: 'commission', key: 'commission', width: 100 },
-    { title: '印花税', dataIndex: 'stamp_duty', key: 'stamp_duty', width: 100 },
-    { title: '操作', key: 'action', width: 60 },
-  ]
-
   return (
     <>
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="card p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
@@ -250,45 +231,41 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
         {/* Table with data */}
         {manualEntries.length > 0 ? (
           <>
-            <div className="overflow-x-auto border border-slate-200 rounded-lg mb-6">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+            <div className="table-container mb-6">
+              <table className="table">
+                <thead>
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[120px]">成交日期</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[100px]">成交时间</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[100px]">证券代码</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[100px]">证券名称</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[80px]">操作</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[80px]">数量</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[100px]">价格</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[120px]">金额</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[100px]">手续费</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[100px]">印花税</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-[60px]">操作</th>
+                    <th>成交日期</th>
+                    <th>成交时间</th>
+                    <th>证券代码</th>
+                    <th>证券名称</th>
+                    <th>操作</th>
+                    <th>数量</th>
+                    <th>价格</th>
+                    <th>金额</th>
+                    <th>手续费</th>
+                    <th>印花税</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-slate-200">
+                <tbody>
                   {manualEntries.map((row) => (
-                    <tr key={row.key} className="hover:bg-slate-50">
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.trade_date}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.trade_time}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.stock_code}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.stock_name}</td>
-                      <td className="px-3 py-2">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-                          row.direction === 'buy' 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-red-100 text-red-700'
-                        }`}>
+                    <tr key={row.key}>
+                      <td>{row.trade_date}</td>
+                      <td>{row.trade_time}</td>
+                      <td>{row.stock_code}</td>
+                      <td>{row.stock_name}</td>
+                      <td>
+                        <span className={`badge ${row.direction === 'buy' ? 'badge-buy' : 'badge-sell'}`}>
                           {row.direction === 'buy' ? '买入' : '卖出'}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.quantity}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.price?.toFixed(2) || '0.00'}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.amount?.toFixed(2) || '0.00'}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.commission?.toFixed(2) || '0.00'}</td>
-                      <td className="px-3 py-2 text-sm text-slate-600">{row.stamp_duty?.toFixed(2) || '0.00'}</td>
-                      <td className="px-3 py-2">
+                      <td>{row.quantity}</td>
+                      <td>{row.price?.toFixed(2) || '0.00'}</td>
+                      <td>{row.amount?.toFixed(2) || '0.00'}</td>
+                      <td>{row.commission?.toFixed(2) || '0.00'}</td>
+                      <td>{row.stamp_duty?.toFixed(2) || '0.00'}</td>
+                      <td>
                         <button
                           onClick={() => removeManualEntry(row.key)}
                           className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
@@ -305,34 +282,36 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
             </div>
 
             {/* Submit Button */}
-            <button
-              onClick={handleManualSubmit}
-              disabled={submitting || manualEntries.length === 0}
-              className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                manualEntries.length === 0
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : submitting
-                    ? 'bg-blue-600 text-white cursor-waiting'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/40'
-              }`}
-            >
-              {submitting ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  提交中...
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  确认提交
-                </>
-              )}
-            </button>
+            <div className="flex justify-center">
+              <button
+                onClick={handleManualSubmit}
+                disabled={submitting || manualEntries.length === 0}
+                className={`py-3 px-8 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                  manualEntries.length === 0
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : submitting
+                      ? 'bg-blue-600 text-white cursor-waiting'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/40'
+                }`}
+              >
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    提交中...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    确认提交
+                  </>
+                )}
+              </button>
+            </div>
           </>
         ) : (
           /* Empty State */
