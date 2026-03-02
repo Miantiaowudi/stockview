@@ -27,6 +27,21 @@ interface ManualEntry {
   stamp_duty: number
 }
 
+// Debounce hook
+const useDebouncedValue = (value: string, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value)
+    }, delay)
+    
+    return () => clearTimeout(handler)
+  }, [value, delay])
+  
+  return debouncedValue
+}
+
 export default function ManualEntryTab({ user, supabase, onImportComplete }: ManualEntryTabProps) {
   const [stockList, setStockList] = useState<SelectProps['options']>([])
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([])
@@ -34,9 +49,11 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
   const [stockLoading, setStockLoading] = useState(false)
-  const [stockSearch, setStockSearch] = useState('')
   const [hasMore, setHasMore] = useState(true)
   const stockPageRef = useRef(1)
+  
+  const [stockSearchInput, setStockSearchInput] = useState('')
+  const debouncedStockSearch = useDebouncedValue(stockSearchInput, 300)
   
   const loadStocks = async (search: string = '', page: number = 1, append: boolean = false) => {
     if (stockLoading) return
@@ -65,10 +82,19 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
       setStockLoading(false)
     }
   }
-
+  
+  // Load stocks when debounced search changes
   useEffect(() => {
-    loadStocks()
-  }, [])
+    if (debouncedStockSearch) {
+      stockPageRef.current = 1
+      loadStocks(debouncedStockSearch, 1, false)
+    } else {
+      // Clear list when search is empty
+      setStockList([])
+      setHasMore(true)
+      stockPageRef.current = 1
+    }
+  }, [debouncedStockSearch])
 
   const openAddModal = () => {
     const today = dayjs()
@@ -119,9 +145,7 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
   }
 
   const handleStockSearch = (value: string) => {
-    setStockSearch(value)
-    stockPageRef.current = 1
-    loadStocks(value, 1, false)
+    setStockSearchInput(value)
   }
 
   const handlePopupScroll: React.UIEventHandler<HTMLDivElement> = (e) => {
@@ -130,7 +154,7 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
     
     if (scrollHeight - scrollTop - clientHeight < 50 && !stockLoading && hasMore) {
       stockPageRef.current += 1
-      loadStocks(stockSearch, stockPageRef.current, true)
+      loadStocks(debouncedStockSearch, stockPageRef.current, true)
     }
   }
 
@@ -262,7 +286,8 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
                 <>
                   {menu}
                   {stockLoading && <div style={{ padding: '8px', textAlign: 'center', color: '#999' }}>加载中...</div>}
-                  {!hasMore && <div style={{ padding: '8px', textAlign: 'center', color: '#999' }}>没有更多了</div>}
+                  {!hasMore && debouncedStockSearch && <div style={{ padding: '8px', textAlign: 'center', color: '#999' }}>没有更多了</div>}
+                  {!debouncedStockSearch && <div style={{ padding: '8px', textAlign: 'center', color: '#999' }}>请输入搜索关键词</div>}
                 </>
               )}
             />
