@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Button, Modal, Form, Input, InputNumber, Radio, Table, Card, message, DatePicker, TimePicker, Tag, Popconfirm } from 'antd'
+import { Button, Modal, Form, InputNumber, Radio, Table, Card, message, DatePicker, TimePicker, Tag, Popconfirm, Select } from 'antd'
 import { PlusOutlined, DeleteOutlined, CheckOutlined } from '@ant-design/icons'
+import type { SelectProps } from 'antd'
 import dayjs from 'dayjs'
 
 interface ManualEntryTabProps {
@@ -27,34 +28,54 @@ interface ManualEntry {
 }
 
 export default function ManualEntryTab({ user, supabase, onImportComplete }: ManualEntryTabProps) {
-  const [stockList, setStockList] = useState<{ code: string; name: string }[]>([])
-  const [stockSearch, setStockSearch] = useState('')
+  const [stockList, setStockList] = useState<SelectProps['options']>([])
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
+  const [stockLoading, setStockLoading] = useState(false)
+  const [stockSearch, setStockSearch] = useState('')
+  const [hasMore, setHasMore] = useState(true)
+  const stockPageRef = useRef(1)
   
-  useEffect(() => {
-    const fetchStocks = async () => {
-      const searchParam = stockSearch ? `?search=${encodeURIComponent(stockSearch)}` : ''
-      const res = await fetch(`/api/stocks/list${searchParam}`)
-      const data = await res.json()
-      setStockList(data)
-    }
+  const loadStocks = async (search: string = '', page: number = 1, append: boolean = false) => {
+    if (stockLoading) return
+    setStockLoading(true)
     
-    if (stockSearch || stockList.length === 0) {
-      const timeoutId = setTimeout(fetchStocks, 300)
-      return () => clearTimeout(timeoutId)
+    try {
+      const res = await fetch(`/api/stocks/list?search=${encodeURIComponent(search)}&page=${page}&limit=50`)
+      const data = await res.json()
+      
+      const options = (Array.isArray(data) ? data : []).map((stock: any) => ({
+        value: stock.code,
+        label: `${stock.code} - ${stock.name}`,
+        name: stock.name,
+      }))
+      
+      if (append) {
+        setStockList(prev => [...(prev || []), ...options])
+      } else {
+        setStockList(options)
+      }
+      
+      setHasMore(options.length >= 50)
+    } catch (error) {
+      console.error('加载股票列表失败:', error)
+    } finally {
+      setStockLoading(false)
     }
-  }, [stockSearch])
+  }
+
+  useEffect(() => {
+    loadStocks()
+  }, [])
 
   const openAddModal = () => {
     const today = dayjs()
     form.setFieldsValue({
       trade_date: today,
       trade_time: today,
-      stock_code: '',
-      stock_name: '',
+      stock: undefined,
       direction: 'buy',
       quantity: 100,
       price: 0,
@@ -75,12 +96,14 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
     try {
       const values = await form.validateFields()
       
+      const selectedStock = stockList?.find(opt => opt.value === values.stock)
+      
       const trade: ManualEntry = {
         key: Date.now().toString(),
         trade_date: values.trade_date.format('YYYY-MM-DD'),
         trade_time: values.trade_time.format('HH:mm:ss'),
-        stock_code: values.stock_code,
-        stock_name: values.stock_name || '',
+        stock_code: values.stock,
+        stock_name: selectedStock?.name || '',
         direction: values.direction,
         quantity: values.quantity,
         price: values.price,
@@ -95,10 +118,19 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
     }
   }
 
-  const handleStockCodeChange = (value: string) => {
-    const stock = stockList.find(s => s.code === value)
-    if (stock) {
-      form.setFieldValue('stock_name', stock.name)
+  const handleStockSearch = (value: string) => {
+    setStockSearch(value)
+    stockPageRef.current = 1
+    loadStocks(value, 1, false)
+  }
+
+  const handlePopupScroll: React.UIEventHandler<HTMLDivElement> = (e) => {
+    const target = e.target as HTMLDivElement
+    const { scrollTop, clientHeight, scrollHeight } = target
+    
+    if (scrollHeight - scrollTop - clientHeight < 50 && !stockLoading && hasMore) {
+      stockPageRef.current += 1
+      loadStocks(stockSearch, stockPageRef.current, true)
     }
   }
 
@@ -213,14 +245,27 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
           <Form.Item label="成交时间" name="trade_time" rules={[{ required: true, message: '请选择成交时间' }]}>
             <TimePicker style={{ width: '100%' }} format="HH:mm:ss" />
           </Form.Item>
-          <Form.Item label="证券代码" name="stock_code" rules={[{ required: true, message: '请输入证券代码' }]}>
-            <Input placeholder="600000" onChange={(e) => handleStockCodeChange(e.target.value)} list="stock-modal-list" />
-          </Form.Item>
-          <datalist id="stock-modal-list">
-            {stockList.map(stock => (<option key={stock.code} value={stock.code}>{stock.name}</option>))}
-          </datalist>
-          <Form.Item label="证券名称" name="stock_name">
-            <Input placeholder="自动填充" disabled />
+          <Form.Item label="证券代码" name="stock" rules={[{ required: true, message: '请选择证券代码' }]}>
+            <Select
+              showSearch
+              placeholder="搜索股票代码或名称"
+              optionFilterProp="label"
+              filterOption={(input, option) =>
+                String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={stockList}
+              onSearch={handleStockSearch}
+              onPopupScroll={handlePopupScroll}
+              loading={stockLoading}
+              style={{ width: '100%' }}
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  {stockLoading && <div style={{ padding: '8px', textAlign: 'center', color: '#999' }}>加载中...</div>}
+                  {!hasMore && <div style={{ padding: '8px', textAlign: 'center', color: '#999' }}>没有更多了</div>}
+                </>
+              )}
+            />
           </Form.Item>
           <Form.Item label="操作方向" name="direction" rules={[{ required: true }]}>
             <Radio.Group>

@@ -147,6 +147,8 @@ const A_SHARE_STOCKS = [
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const search = searchParams.get('search')?.toLowerCase() || ''
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = parseInt(searchParams.get('limit') || '50')
 
   let stocks = A_SHARE_STOCKS
 
@@ -159,8 +161,10 @@ export async function GET(request: Request) {
     )
   }
 
-  // Limit to 50 results
-  stocks = stocks.slice(0, 50)
+  // Pagination
+  const start = (page - 1) * limit
+  const end = start + limit
+  const paginatedStocks = stocks.slice(start, end)
 
-  return NextResponse.json(stocks)
+  return NextResponse.json(paginatedStocks)
 }
