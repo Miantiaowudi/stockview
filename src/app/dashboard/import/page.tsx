@@ -192,78 +192,52 @@ export default function ImportPage() {
             )}
           </div>
 
-          {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            {/* Format Guide Card */}
-            <div className="card p-6">
-              <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                CSV格式说明
-              </h2>
-              <div className="text-sm text-slate-600">
-                <p className="mb-3">请确保CSV文件包含以下表头（顺序无关）：</p>
-                <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
-                  <code className="text-xs text-slate-600 break-all">
-                    成交日期, 成交时间, 证券代码, 证券名称, 操作, 成交数量, 成交均价, 成交金额, 手续费, 印花税
-                  </code>
+          {/* Right Column - Only show help on import tab */}
+          {activeTab === 'import' && (
+            <div className="space-y-6">
+              {/* Format Guide Card */}
+              <div className="card p-6">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                  CSV格式说明
+                </h2>
+                <div className="text-sm text-slate-600">
+                  <p className="mb-3">请确保CSV文件包含以下表头（顺序无关）：</p>
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                    <code className="text-xs text-slate-600 break-all">
+                      成交日期, 成交时间, 证券代码, 证券名称, 操作, 成交数量, 成交均价, 成交金额, 手续费, 印花税
+                    </code>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Instructions Card */}
-            <div className="card p-6">
-              <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="w- bg-blue-6001 h-5 rounded-full"></span>
-                导入说明
-              </h2>
-              <ul className="text-sm text-slate-600 space-y-3">
-                <li className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">1</span>
-                  <span>从券商客户端导出CSV格式的交割单</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">2</span>
-                  <span>确保CSV文件包含标准表头</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">3</span>
-                  <span>导入后支持自动去重，相同记录不会重复导入</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">4</span>
-                  <span>导入完成后可在&quot;账户分析&quot;查看统计数据</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Quick Links Card */}
-            <div className="card p-6">
-              <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                快速导航
-              </h2>
-              <div className="space-y-2">
-                <Link 
-                  href="/dashboard" 
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors text-slate-600 hover:text-blue-600"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                  </svg>
-                  <span className="text-sm font-medium">返回看板</span>
-                </Link>
-                <Link 
-                  href="/dashboard/analytics" 
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors text-slate-600 hover:text-blue-600"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <span className="text-sm font-medium">账户分析</span>
-                </Link>
+              {/* Instructions Card */}
+              <div className="card p-6">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                  <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                  导入说明
+                </h2>
+                <ul className="text-sm text-slate-600 space-y-3">
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">1</span>
+                    <span>从券商客户端导出CSV格式的交割单</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">2</span>
+                    <span>确保CSV文件包含标准表头</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">3</span>
+                    <span>导入后支持自动去重，相同记录不会重复导入</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 text-xs font-medium">4</span>
+                    <span>导入完成后可在"账户分析"查看统计数据</span>
+                  </li>
+                </ul>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
