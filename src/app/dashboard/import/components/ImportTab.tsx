@@ -11,6 +11,13 @@ const STANDARD_COLUMNS = [
   '成交数量', '成交均价', '成交金额', '手续费', '印花税'
 ]
 
+const CSV_HELP_TEXT = `支持标准CSV格式文件导入，表头需包含以下字段：
+成交日期、成交时间、证券代码、证券名称、操作、成交数量、成交均价、成交金额、手续费、印花税
+
+日期格式：YYYYMMDD 或 YYYY-MM-DD
+时间格式：HHmmss 或 HH:MM:SS
+操作：买入/卖出`
+
 const parseRow = (row: string[]) => {
   const date = row[0]
   const time = row[1]
@@ -274,8 +281,9 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
   ]
 
   return (
-    <Card title="导入数据">
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Card 
+      title={<span>导入数据</span>}
+      extra={
         <Upload
           accept=".csv"
           fileList={fileList}
@@ -286,7 +294,9 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
         >
           <Button icon={<UploadOutlined />}>点击上传 CSV 文件</Button>
         </Upload>
-
+      }
+    >
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
         {importResult && (
           <Alert
             message={importResult.message}
@@ -305,6 +315,23 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
               size="small"
               scroll={{ x: 1000 }}
             />
+          </div>
+        )}
+
+        {previewData.length === 0 && !importResult && (
+          <div 
+            style={{
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%)',
+              borderRadius: 12,
+              padding: '48px 24px',
+              textAlign: 'center',
+              border: '1px solid #e8e8e8'
+            }}
+          >
+            <UploadOutlined style={{ fontSize: 48, color: '#1890ff', marginBottom: 16, display: 'block' }} />
+            <p style={{ color: '#666', fontSize: 14, margin: 0, whiteSpace: 'pre-line', lineHeight: 1.8 }}>
+              {CSV_HELP_TEXT}
+            </p>
           </div>
         )}
 
