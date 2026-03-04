@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Markdown from 'react-markdown'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 interface KLineItem {
   date: string
@@ -155,8 +155,6 @@ export default function StockAnalysis({
         </div>
         
         {/* 加载动画 */}
-        
-        {/* 加载动画 */}
         <div className="animate-pulse space-y-3">
           <div className="h-4 bg-slate-200 rounded w-3/4"></div>
           <div className="h-4 bg-slate-200 rounded w-1/2"></div>
@@ -217,8 +215,7 @@ export default function StockAnalysis({
             📈 AI 深度分析
           </h3>
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
-            <div className="prose prose-sm max-w-none text-slate-700">
-              <Markdown>{analysis}</Markdown>
+              <MarkdownRenderer content={analysis} />
             </div>
           </div>
         </div>
@@ -230,9 +227,7 @@ export default function StockAnalysis({
           <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
             🎯 投资建议
           </h3>
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-            <div className="prose prose-sm max-w-none text-slate-700">
-              <Markdown>{recommendation}</Markdown>
+              <MarkdownRenderer content={recommendation} />
             </div>
           </div>
         </div>
