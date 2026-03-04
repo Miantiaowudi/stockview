@@ -75,9 +75,10 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
               {children}
             </a>
           ),
-          code: ({ inline, className, children, ...props }) => {
+          code: ({ className, children, ...props }) => {
             const match = /language-(\w+)/.exec(className || '')
-            if (!inline && match) {
+            const isInline = !className || !className.includes('language-')
+            if (!isInline && match) {
               return (
                 <div className="rounded-lg overflow-hidden my-4 shadow-sm">
                   <div className="bg-slate-800 px-4 py-2 text-xs text-slate-300 flex items-center justify-between">
@@ -95,18 +96,10 @@ export default function MarkdownRenderer({ content }: MarkdownRendererProps) {
               </code>
             )
           },
-          pre: ({ children }) => (
-            <>{children}</>
-          ),
-          hr: () => (
-            <hr className="my-6 border-slate-200" />
-          ),
-          strong: ({ children }) => (
-            <strong className="font-bold text-slate-800">{children}</strong>
-          ),
-          em: ({ children }) => (
-            <em className="italic text-slate-700">{children}</em>
-          ),
+          pre: ({ children }) => <>{children}</>,
+          hr: () => <hr className="my-6 border-slate-200" />,
+          strong: ({ children }) => <strong className="font-bold text-slate-800">{children}</strong>,
+          em: ({ children }) => <em className="italic text-slate-700">{children}</em>,
         }}
       >
         {content}

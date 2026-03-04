@@ -218,7 +218,6 @@ export default function StockAnalysis({
               <MarkdownRenderer content={analysis} />
             </div>
           </div>
-        </div>
       )}
 
       {/* 投资建议 */}
@@ -227,10 +226,10 @@ export default function StockAnalysis({
           <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
             🎯 投资建议
           </h3>
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
               <MarkdownRenderer content={recommendation} />
             </div>
-          </div>
-        </div>
+          </div> 
       )}
       
       {/* 流式加载指示器 */}

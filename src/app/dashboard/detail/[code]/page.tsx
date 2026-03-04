@@ -45,19 +45,16 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user }, data: sessionData } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth/login')
       } else {
         setUser(user)
-        // 获取access token
-        if (sessionData.session) {
-          setAuthToken(sessionData.session.access_token)
-        }
       }
       setLoading(false)
     }
     checkUser()
+
   }, [supabase, router])
 
   useEffect(() => {
