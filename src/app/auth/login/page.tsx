@@ -55,6 +55,12 @@ export default function LoginPage() {
     }
   }
 
+  // 填充 mock 账户信息
+  const fillMockAccount = () => {
+    setEmail('1278459016@qq.com')
+    setPassword('123456')
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 page-enter">
       <div className="w-full max-w-md">
@@ -143,6 +149,16 @@ export default function LoginPage() {
               <Link href="/auth/register" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
                 立即注册
               </Link>
+            </p>
+            <p className="text-center text-slate-500 mt-3 text-sm">
+              或{' '}
+              <button 
+                type="button"
+                onClick={fillMockAccount}
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors underline"
+              >
+                立即体验 mock 账户
+              </button>
             </p>
           </div>
         </div>
