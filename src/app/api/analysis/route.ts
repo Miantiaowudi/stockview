@@ -21,7 +21,7 @@ interface KLineItem {
 }
 
 // 阿里云 DashScope API 配置
-const API_KEY = "sk-5b892077cc4540b1be1d616c92405c98";
+const API_KEY = process.env.DASHSCOPE_API_KEY || "";
 
 // --- 1. 定义状态 ---
 const AgentState = Annotation.Root({
