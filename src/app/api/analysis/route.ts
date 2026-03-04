@@ -116,10 +116,7 @@ ${state.data?.recent_kline?.map((k: any) => `${k.date?.split('T')[0]}: 开=${k.o
 请分析：
 1. 当前股价走势和技术形态
 2. 用户的盈亏情况和持仓成本
-3. 是否有交易信号或风险提示
-4. 给出详细的分析报告（用中文）
-
-请用Markdown格式输出分析结果。`;
+`;
 
   const res = await llm.invoke(prompt);
   return {
@@ -142,10 +139,9 @@ ${state.analysis}
 
 请根据用户的实际持仓情况（持仓${state.data?.holdings?.hold_quantity || 0}股，成本¥${(state.data?.holdings?.avg_cost || 0).toFixed(2)}，当前盈亏¥${(state.data?.holdings?.profit_loss || 0).toFixed(2)}），给出：
 1. 操作建议（买入/卖出/持有）
-2. 风险提示
+2. 是否有交易信号或风险提示
 3. 具体的建议价格或价位区间
-
-请用简洁的Markdown格式输出建议。`;
+`;
 
   const res = await llm.invoke(prompt);
   return {

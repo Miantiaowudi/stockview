@@ -231,7 +231,7 @@ export default function StockAnalysis({
             </div>
           </div> 
       )}
-      
+
       {/* 流式加载指示器 */}
       {loading && hasContent && (
         <div className="mt-4 text-center text-sm text-blue-600 animate-pulse">
