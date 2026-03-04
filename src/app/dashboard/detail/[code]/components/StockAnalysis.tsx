@@ -62,6 +62,8 @@ export default function StockAnalysis({
               } else if (parsed.node === "recommend") {
                 setRecommendation(prev => prev + parsed.chunk);
               }
+              // 有内容时结束loading状态
+              setLoading(false);
             }
             
             if (parsed.data) {
@@ -108,8 +110,9 @@ export default function StockAnalysis({
     )
   }
 
-  // 加载中状态
-  if (loading) {
+  // 加载中状态（且没有内容时显示骨架屏）
+  const hasContent = analysis || recommendation
+  if (loading && !hasContent) {
     return (
       <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
@@ -228,6 +231,13 @@ export default function StockAnalysis({
               <Markdown>{recommendation}</Markdown>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* 流式加载指示器 */}
+      {loading && hasContent && (
+        <div className="mt-4 text-center text-sm text-blue-600 animate-pulse">
+          ⏳ 继续生成中...
         </div>
       )}
     </div>
