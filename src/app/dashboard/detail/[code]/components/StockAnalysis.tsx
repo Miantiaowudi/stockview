@@ -154,20 +154,7 @@ export default function StockAnalysis({
           </h2>
         </div>
         
-        {/* 股票基本信息骨架 */}
-        {data && (
-          <div className="mb-4 p-3 bg-slate-50 rounded-lg">
-            <p className="text-lg font-semibold text-slate-800">
-              {data.name || stockName || stockCode}
-            </p>
-            <p className="text-2xl font-bold text-slate-900">
-              ¥{data.price?.toFixed(2) || '--'}
-              <span className={`ml-2 text-sm font-normal ${(data.change_pct || 0) >= 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {(data.change_pct || 0) >= 0 ? '+' : ''}{data.change_pct?.toFixed(2) || 0}%
-              </span>
-            </p>
-          </div>
-        )}
+        {/* 加载动画 */}
         
         {/* 加载动画 */}
         <div className="animate-pulse space-y-3">
@@ -221,22 +208,8 @@ export default function StockAnalysis({
         >
           🔄 重新分析
         </button>
-      </div>
-
-      {/* 股票基本信息 */}
-      {data && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-          <p className="text-lg font-semibold text-slate-800">
-            {data.name || stockName || stockCode} ({stockCode})
-          </p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">
-            ¥{data.price?.toFixed(2) || '--'}
-            <span className={`ml-2 text-sm font-normal ${(data.change_pct || 0) >= 0 ? 'text-red-500' : 'text-green-500'}`}>
-              {(data.change_pct || 0) >= 0 ? '+' : ''}{data.change_pct?.toFixed(2) || 0}%
-            </span>
-          </p>
-        </div>
-      )}
+      
+      {/* AI 深度分析 */}
 
       {/* AI 深度分析 */}
       {analysis && (
