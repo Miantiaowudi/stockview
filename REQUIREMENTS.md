@@ -82,14 +82,21 @@
   - MA5/MA10/MA20/MA60
   - 买卖价格和数量
 
-### 5. UI/UX 优化
-- 统一的深蓝色主题配色
-- 卡片阴影和悬停效果 (.card)
-- 表格样式 (.table-container, .table)
-- 标签样式 (.badge, .badge-buy, .badge-sell)
-- 加载状态动画
-- 响应式布局
-- 导入页面Tab导航（与dashboard风格一致）
+### 5. AI 智能分析
+  - 本地 LangGraph 智能体服务
+  - 基于 qwen2.5:14b 模型 (Ollama)
+  - K线数据 + 成交明细分析
+  - 流式输出实时显示
+  - Markdown 格式渲染
+
+### 6. UI/UX 优化
+  - 统一的深蓝色主题配色
+  - 卡片阴影和悬停效果 (.card)
+  - 表格样式 (.table-container, .table)
+  - 标签样式 (.badge, .badge-buy, .badge-sell)
+  - 加载状态动画
+  - 响应式布局
+  - 导入页面Tab导航（与dashboard风格一致）
 
 ## 路由结构
 
@@ -99,7 +106,14 @@
 | `/auth/login` | 登录 |
 | `/auth/register` | 注册 |
 | `/dashboard` | 账户分析首页 |
-| `/dashboard/import` | 数据导入 |
+  - `/dashboard/detail/[code]` | 个股详情页 |
+  
+## API 路由
+  
+| 路径 | 说明 |
+|------|------|
+  | `/api/kline` | 获取K线数据 |
+  | `/api/analysis` | AI智能分析 (LangGraph) |
 | `/dashboard/detail/[code]` | 个股详情页 |
 
 ## 数据库表
@@ -139,6 +153,15 @@
 - [ ] 数据导出功能
 
 ## 更新日志
+
+### 2026-03-04
+- AI 智能分析功能
+  - 集成 LangGraph 本地智能体服务
+  - 基于 qwen2.5:14b 模型
+  - 前端直接传递K线数据和成交明细给智能体
+  - 流式输出实时显示分析过程
+  - Markdown 格式渲染分析和建议
+  - UI 优化：移除股价展示，只保留分析和建议
 
 ### 2026-03-02
 - 导入页面UI优化
