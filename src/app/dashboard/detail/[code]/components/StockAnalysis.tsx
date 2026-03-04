@@ -208,8 +208,7 @@ export default function StockAnalysis({
         >
           🔄 重新分析
         </button>
-      
-      {/* AI 深度分析 */}
+        </div>
 
       {/* AI 深度分析 */}
       {analysis && (
