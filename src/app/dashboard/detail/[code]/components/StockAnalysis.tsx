@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { streamStockAnalysis } from '@/lib/langGraphApi'
+import Markdown from 'react-markdown'
 
 interface StockAnalysisProps {
   stockCode: string
@@ -14,55 +14,84 @@ export default function StockAnalysis({
 }: StockAnalysisProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [analysis, setAnalysis] = useState<any>(null)
-  const [logs, setLogs] = useState<string[]>([])
-  const [recommendation, setRecommendation] = useState("");
+  const [analysis, setAnalysis] = useState<string>("")
+  const [recommendation, setRecommendation] = useState<string>("")
+  const [data, setData] = useState<{name?: string; price?: number; change_pct?: number} | null>(null)
+  const [hasStarted, setHasStarted] = useState(false)
   
   const handleAnalyze = async () => {
-    const response = await fetch("/api/analysis", {
-      method: "POST",
-      body: JSON.stringify({ ticker:stockCode }),
-    });
-    const reader = response.body?.getReader();
-    const decoder = new TextDecoder();
-  
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-  
-      const chunk = decoder.decode(value);
-      const lines = chunk.split("\n\n").filter(Boolean);
-  
-      for (const line of lines) {
-        const data = JSON.parse(line);
-  
-        if (data.type === "token") {
-          if (data.node === "analyze") {
-            setAnalysis(prev => prev + data.chunk); // 逐字累加分析
-          } else if (data.node === "recommend") {
-            setRecommendation(prev => prev + data.chunk); // 逐字累加建议
+    setLoading(true)
+    setError(null)
+    setAnalysis("")
+    setRecommendation("")
+    setData(null)
+    setHasStarted(true)
+    
+    try {
+      const response = await fetch("/api/analysis", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticker: stockCode }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`请求失败: ${response.status}`)
+      }
+
+      if (!response.body) {
+        throw new Error("响应体为空")
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n\n").filter(Boolean);
+
+        for (const line of lines) {
+          try {
+            const parsed = JSON.parse(line)
+            
+            if (parsed.type === "token") {
+              if (parsed.node === "analyze") {
+                setAnalysis(prev => prev + parsed.chunk);
+              } else if (parsed.node === "recommend") {
+                setRecommendation(prev => prev + parsed.chunk);
+              }
+            }
+            
+            if (parsed.data) {
+              setData(parsed.data)
+            }
+          } catch (e) {
+            // Skip invalid JSON lines
           }
         }
-        
-        // 处理节点完成后的最终消息
-        if (data.messages) {
-          console.log("状态更新:", data.messages);
-        }
       }
+    } catch (err: any) {
+      setError(err.message || "分析失败，请重试")
+    } finally {
+      setLoading(false)
     }
   };
 
-  if (!analysis && !loading) {
+  // 初始状态 - 显示开始分析按钮
+  if (!hasStarted) {
     return (
-      <div className="card">
+      <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-800">
+          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
             🤖 AI 智能分析
-          </h3>
+          </h2>
           <button
             onClick={handleAnalyze}
             disabled={loading}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 text-sm font-medium"
           >
             {loading ? '分析中...' : '🚀 开始分析'}
           </button>
@@ -70,116 +99,137 @@ export default function StockAnalysis({
         <p className="text-slate-500 text-sm">
           点击按钮获取 AI 智能分析报告
         </p>
-        {error && <p className="mt-2 text-red-500 text-sm">{error}</p>}
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-slate-800">
-            🤖 AI 智能分析
-          </h3>
-        </div>
-        
-        {/* 进度日志 */}
-        <div className="mb-4 p-3 bg-slate-50 rounded-lg">
-          <div className="space-y-1">
-            {logs.map((log, idx) => (
-              <div key={idx} className="text-xs text-slate-500">{log}</div>
-            ))}
-            <div className="text-xs text-blue-500 animate-pulse">⏳ AI 思考中...</div>
-          </div>
-        </div>
-        
-        <div className="animate-pulse space-y-3">
-          <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="card">
-        <div className="text-red-500 mb-4">{error}</div>
-        <button onClick={handleAnalyze} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-          重试
-        </button>
-      </div>
-    )
-  }
-
-  if (!analysis) return null
-
-  // 解析数据
-  const data = analysis.data || {}
-  const messages = analysis.messages || []
-  const displayName = data.name || stockName || stockCode
-  const currentPrice = data.price || 0
-  const changePct = data.change_pct || 0
-
-  return (
-    <div className="space-y-4">
-      {/* 头部信息 */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-800">
-              📊 {displayName} ({stockCode})
-            </h3>
-            <p className="text-2xl font-bold text-slate-900">
-              ¥{currentPrice}
-              <span className={`ml-2 text-sm font-normal ${changePct >= 0 ? 'text-red-500' : 'text-green-500'}`}>
-                {changePct >= 0 ? '+' : ''}{changePct}%
-              </span>
-            </p>
-          </div>
-        </div>
-        
-        {/* 进度消息 */}
-        {messages.length > 0 && (
-          <div className="mb-3 p-2 bg-slate-50 rounded text-xs text-slate-500">
-            {messages.map((msg: string, idx: number) => (
-              <div key={idx}>{msg}</div>
-            ))}
+        {error && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
       </div>
+    )
+  }
 
-      {/* AI 分析 */}
+  // 加载中状态
+  if (loading) {
+    return (
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+            🤖 AI 智能分析
+          </h2>
+        </div>
+        
+        {/* 股票基本信息骨架 */}
+        {data && (
+          <div className="mb-4 p-3 bg-slate-50 rounded-lg">
+            <p className="text-lg font-semibold text-slate-800">
+              {data.name || stockName || stockCode}
+            </p>
+            <p className="text-2xl font-bold text-slate-900">
+              ¥{data.price?.toFixed(2) || '--'}
+              <span className={`ml-2 text-sm font-normal ${(data.change_pct || 0) >= 0 ? 'text-red-500' : 'text-green-500'}`}>
+                {(data.change_pct || 0) >= 0 ? '+' : ''}{data.change_pct?.toFixed(2) || 0}%
+              </span>
+            </p>
+          </div>
+        )}
+        
+        {/* 加载动画 */}
+        <div className="animate-pulse space-y-3">
+          <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+          <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+          <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+        </div>
+        
+        <div className="mt-4 text-center text-sm text-blue-600 animate-pulse">
+          ⏳ AI 正在分析中...
+        </div>
+      </div>
+    )
+  }
+
+  // 错误状态
+  if (error) {
+    return (
+      <div className="card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+            🤖 AI 智能分析
+          </h2>
+          <button
+            onClick={handleAnalyze}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            🔄 重试
+          </button>
+        </div>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card p-6">
+      {/* 头部 */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+          <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+          🤖 AI 智能分析
+        </h2>
+        <button
+          onClick={handleAnalyze}
+          disabled={loading}
+          className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        >
+          🔄 重新分析
+        </button>
+      </div>
+
+      {/* 股票基本信息 */}
+      {data && (
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+          <p className="text-lg font-semibold text-slate-800">
+            {data.name || stockName || stockCode} ({stockCode})
+          </p>
+          <p className="text-2xl font-bold text-slate-900 mt-1">
+            ¥{data.price?.toFixed(2) || '--'}
+            <span className={`ml-2 text-sm font-normal ${(data.change_pct || 0) >= 0 ? 'text-red-500' : 'text-green-500'}`}>
+              {(data.change_pct || 0) >= 0 ? '+' : ''}{data.change_pct?.toFixed(2) || 0}%
+            </span>
+          </p>
+        </div>
+      )}
+
+      {/* AI 深度分析 */}
       {analysis && (
-        <div className="card">
-          <h4 className="font-semibold text-slate-800 mb-3">📈 AI 深度分析</h4>
-          <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
-            {analysis}
+        <div className="mb-6">
+          <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
+            📈 AI 深度分析
+          </h3>
+          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+            <div className="prose prose-sm max-w-none text-slate-700">
+              <Markdown>{analysis}</Markdown>
+            </div>
           </div>
         </div>
       )}
 
       {/* 投资建议 */}
       {recommendation && (
-        <div className="card bg-gradient-to-r from-blue-50 to-indigo-50">
-          <h4 className="font-semibold text-slate-800 mb-3">🎯 投资建议</h4>
-          <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
-            {recommendation}
+        <div className="mb-6">
+          <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
+            🎯 投资建议
+          </h3>
+          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+            <div className="prose prose-sm max-w-none text-slate-700">
+              <Markdown>{recommendation}</Markdown>
+            </div>
           </div>
         </div>
       )}
-
-      {/* 重新分析 */}
-      <div className="flex justify-center">
-        <button
-          onClick={handleAnalyze}
-          disabled={loading}
-          className="px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          🔄 重新分析
-        </button>
-      </div>
     </div>
   )
 }

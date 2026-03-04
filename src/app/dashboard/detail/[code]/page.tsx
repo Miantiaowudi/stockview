@@ -324,13 +324,11 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         {/* K线图 */}
         <KLineChart klineData={klineData} trades={trades} />
 
-        {/* AI 智能分析 */}
-        <div className="mb-8">
-          <StockAnalysis stockCode={stockCode} stockName={stockName} />
-        </div>
-
         {/* 成交明细 */}
         <TradeTable trades={trades} />
+
+        {/* AI 智能分析 */}
+        <StockAnalysis stockCode={stockCode} stockName={stockName} />
       </main>
     </div>
   )
