@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
-import { ChatOllama } from "@langchain/ollama";
+import { ChatDashScope } from "@langchain/community/chat_models/dashscope";
 
 interface Trade {
   id: string;
@@ -20,14 +20,17 @@ interface KLineItem {
   low: number;
 }
 
+// 阿里云 DashScope API 配置
+const API_KEY = "sk-5b892077cc4540b1be1d616c92405c98";
+
 // --- 1. 定义状态 ---
 const AgentState = Annotation.Root({
-  ticker: Annotation<string>,
-  klineData: Annotation<any[]>,
-  trades: Annotation<Trade[]>,
-  data: Annotation<any>,
-  analysis: Annotation<string>,
-  recommendation: Annotation<string>,
+  ticker: Annotation<string>(),
+  klineData: Annotation<any[]>(),
+  trades: Annotation<Trade[]>(),
+  data: Annotation<any>(),
+  analysis: Annotation<string>(),
+  recommendation: Annotation<string>(),
   messages: Annotation<string[]>({
     reducer: (x, y) => x.concat(y),
     default: () => [],
@@ -38,7 +41,6 @@ const AgentState = Annotation.Root({
 const fetchNode = async (state: typeof AgentState.State) => {
   const { ticker, klineData: frontendKlineData, trades: frontendTrades } = state;
   
-  // 使用前端传入的数据
   const klineData = frontendKlineData || [];
   const trades = frontendTrades || [];
   
@@ -53,7 +55,6 @@ const fetchNode = async (state: typeof AgentState.State) => {
   const totalSell = sellTrades.reduce((sum: number, t: Trade) => sum + t.price * t.quantity, 0);
   const totalCommission = trades.reduce((sum: number, t: Trade) => sum + t.commission, 0);
   
-  // 获取最新行情（从K线数据）
   const latestKline = klineData && klineData.length > 0 ? klineData[klineData.length - 1] : null;
   const currentPrice = latestKline?.close || 0;
   const prevPrice = klineData && klineData.length > 1 ? klineData[klineData.length - 2]?.close : currentPrice;
@@ -90,7 +91,11 @@ const fetchNode = async (state: typeof AgentState.State) => {
 };
 
 const analyzeNode = async (state: typeof AgentState.State) => {
-  const llm = new ChatOllama({ model: "qwen2.5:14b", temperature: 0.2 });
+  const llm = new ChatDashScope({
+    apiKey: API_KEY,
+    model: "qwen-plus", // qwen3.5-27b
+    temperature: 0.2,
+  });
   
   const prompt = `你是一位专业的股票分析师。请根据以下用户的实际交易数据和技术K线数据，进行深度分析：
 
@@ -118,13 +123,17 @@ ${state.data?.recent_kline?.map((k: any) => `${k.date?.split('T')[0]}: 开=${k.o
 
   const res = await llm.invoke(prompt);
   return {
-    analysis: res.content,
+    analysis: typeof res.content === 'string' ? res.content : JSON.stringify(res.content),
     messages: ["✓ AI 分析完成"]
   };
 };
 
 const recommendNode = async (state: typeof AgentState.State) => {
-  const llm = new ChatOllama({ model: "qwen2.5:14b", temperature: 0.1 });
+  const llm = new ChatDashScope({
+    apiKey: API_KEY,
+    model: "qwen-plus", // qwen3.5-27b
+    temperature: 0.1,
+  });
   
   const prompt = `基于以下分析结果，请给出具体的投资建议：
 
@@ -140,7 +149,7 @@ ${state.analysis}
 
   const res = await llm.invoke(prompt);
   return {
-    recommendation: res.content,
+    recommendation: typeof res.content === 'string' ? res.content : JSON.stringify(res.content),
     messages: ["✓ 策略生成完毕"]
   };
 };
