@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
 import { ChatOllama } from "@langchain/ollama";
-import { createClient } from "@/lib/supabase";
 
 interface Trade {
   id: string;
@@ -11,6 +10,14 @@ interface Trade {
   quantity: number;
   commission: number;
   trade_time: string;
+}
+
+interface KLineItem {
+  date: string;
+  open: number;
+  close: number;
+  high: number;
+  low: number;
 }
 
 // --- 1. 定义状态 ---
@@ -27,49 +34,13 @@ const AgentState = Annotation.Root({
   }),
 });
 
-// --- 2. 获取K线数据 ---
-async function fetchKlineData(ticker: string): Promise<any[]> {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/kline?code=${ticker}`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    return Array.isArray(data) ? data : [];
-  } catch (e) {
-    console.error('获取K线数据失败:', e);
-    return [];
-  }
-}
-
-// --- 3. 获取用户成交明细 ---
-async function fetchUserTrades(supabase: any, userId: string, ticker: string): Promise<Trade[]> {
-  try {
-    const { data, error } = await supabase
-      .from('normalized_trades')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('stock_code', ticker)
-      .order('trade_time', { ascending: true });
-    
-    if (error) {
-      console.error('获取成交明细失败:', error);
-      return [];
-    }
-    return data || [];
-  } catch (e) {
-    console.error('获取成交明细失败:', e);
-    return [];
-  }
-}
-
-// --- 4. 节点定义 ---
+// --- 2. 节点定义（直接使用前端传入的数据）---
 const fetchNode = async (state: typeof AgentState.State) => {
-  const { ticker } = state;
+  const { ticker, klineData: frontendKlineData, trades: frontendTrades } = state;
   
-  // 并行获取K线数据和成交明细
-  const [klineData, trades] = await Promise.all([
-    fetchKlineData(ticker),
-    state.trades || []  // 已经在主节点获取
-  ]);
+  // 使用前端传入的数据
+  const klineData = frontendKlineData || [];
+  const trades = frontendTrades || [];
   
   // 计算用户持仓信息
   const buyTrades = trades.filter((t: Trade) => t.direction === 'buy');
@@ -108,11 +79,11 @@ const fetchNode = async (state: typeof AgentState.State) => {
       quantity: t.quantity,
       commission: t.commission
     })),
-    recent_kline: klineData?.slice(-20) || []  // 最近20条K线数据
+    recent_kline: klineData?.slice(-20) || []
   };
   
   return {
-    messages: ["✓ 正在获取行情数据...", "✓ 正在获取成交明细...", "✓ 数据整合完成"],
+    messages: ["✓ 正在整合数据...", "✓ 数据整合完成"],
     data: stockData,
     klineData
   };
@@ -135,7 +106,7 @@ const analyzeNode = async (state: typeof AgentState.State) => {
 ${state.data?.trades?.slice(-10).map((t: any) => `- ${t.time?.split('T')[0]} | ${t.direction === 'buy' ? '买入' : '卖出'} | ¥${t.price} | ${t.quantity}股`).join('\n') || '暂无成交记录'}
 
 ## K线数据（最近20个交易日）
-${state.data?.recent_kline?.map((k: any) => `${k.time?.split('T')[0]}: 开=${k.open} 高=${k.high} 低=${k.low} 收=${k.close} 量=${k.volume || '-'}`).join('\n') || '暂无K线数据'}
+${state.data?.recent_kline?.map((k: any) => `${k.date?.split('T')[0]}: 开=${k.open} 高=${k.high} 低=${k.low} 收=${k.close}`).join('\n') || '暂无K线数据'}
 
 请分析：
 1. 当前股价走势和技术形态
@@ -174,7 +145,7 @@ ${state.analysis}
   };
 };
 
-// --- 5. 构建图 ---
+// --- 3. 构建图 ---
 const workflow = new StateGraph(AgentState)
   .addNode("fetch", fetchNode)
   .addNode("analyze", analyzeNode)
@@ -186,37 +157,9 @@ const workflow = new StateGraph(AgentState)
 
 const app = workflow.compile();
 
-// --- 6. 流式接口出口 ---
+// --- 4. 流式接口出口 ---
 export async function POST(req: NextRequest) {
-  const { ticker } = await req.json();
-  
-  // 从Header获取Supabase token来验证用户
-  const supabaseToken = req.headers.get('Authorization')?.replace('Bearer ', '');
-  let userId: string | null = null;
-  let trades: Trade[] = [];
-  
-  // 验证用户并获取成交明细
-  if (supabaseToken) {
-    try {
-      const supabase = createClient();
-      const { data: { user }, error } = await supabase.auth.getUser(supabaseToken);
-      
-      if (user && !error) {
-        userId = user.id;
-        // 获取该用户的成交明细
-        const { data: tradesData } = await supabase
-          .from('normalized_trades')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('stock_code', ticker)
-          .order('trade_time', { ascending: true });
-        
-        trades = tradesData || [];
-      }
-    } catch (e) {
-      console.error('获取用户信息失败:', e);
-    }
-  }
+  const { ticker, klineData, trades } = await req.json();
   
   const encoder = new TextEncoder();
   
@@ -230,8 +173,8 @@ export async function POST(req: NextRequest) {
         const eventStream = await app.streamEvents(
           { 
             ticker, 
-            klineData: [],
-            trades,
+            klineData: klineData || [],
+            trades: trades || [],
             messages: [], 
             data: {}, 
             analysis: "", 
@@ -247,7 +190,7 @@ export async function POST(req: NextRequest) {
           if (eventType === "on_chain_end" && event.name === "fetch") {
             send({ 
               node: "fetch", 
-              messages: ["✓ 数据获取完成"],
+              messages: ["✓ 数据整合完成"],
               data: event.data.output.data 
             });
           }

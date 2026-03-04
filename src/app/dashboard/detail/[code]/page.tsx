@@ -334,7 +334,13 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
 
         {/* AI 智能分析 */}
         <div className="mt-8">
-          <StockAnalysis stockCode={stockCode} stockName={stockName} authToken={authToken} />
+          <StockAnalysis
+            stockCode={stockCode}
+            stockName={stockName}
+            authToken={authToken}
+            klineData={klineData}
+            trades={trades}
+          />
         </div>
       </main>
     </div>

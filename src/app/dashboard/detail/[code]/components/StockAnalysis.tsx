@@ -3,16 +3,38 @@
 import { useState } from 'react'
 import Markdown from 'react-markdown'
 
+interface KLineItem {
+  date: string
+  open: number
+  close: number
+  high: number
+  low: number
+}
+
+interface Trade {
+  id: string
+  stock_code: string
+  direction: 'buy' | 'sell'
+  price: number
+  quantity: number
+  commission: number
+  trade_time: string
+}
+
 interface StockAnalysisProps {
   stockCode: string
   stockName?: string
   authToken?: string
+  klineData?: KLineItem[]
+  trades?: Trade[]
 }
 
 export default function StockAnalysis({
   stockCode,
   stockName = '',
   authToken = '',
+  klineData = [],
+  trades = [],
 }: StockAnalysisProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -37,7 +59,11 @@ export default function StockAnalysis({
       const response = await fetch("/api/analysis", {
         method: "POST",
         headers,
-        body: JSON.stringify({ ticker: stockCode }),
+        body: JSON.stringify({
+          ticker: stockCode,
+          klineData,
+          trades
+        }),
       });
 
       if (!response.ok) {
