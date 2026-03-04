@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { Annotation, StateGraph, START, END } from "@langchain/langgraph";
-import { ChatDashScope } from "@langchain/community/chat_models/dashscope";
+import { ChatAlibabaTongyi } from "@langchain/community/chat_models/alibaba_tongyi";
 
 interface Trade {
   id: string;
@@ -91,7 +91,7 @@ const fetchNode = async (state: typeof AgentState.State) => {
 };
 
 const analyzeNode = async (state: typeof AgentState.State) => {
-  const llm = new ChatDashScope({
+  const llm = new ChatAlibabaTongyi({
     apiKey: API_KEY,
     model: "qwen-plus", // qwen3.5-27b
     temperature: 0.2,
@@ -129,7 +129,7 @@ ${state.data?.recent_kline?.map((k: any) => `${k.date?.split('T')[0]}: 开=${k.o
 };
 
 const recommendNode = async (state: typeof AgentState.State) => {
-  const llm = new ChatDashScope({
+  const llm = new ChatAlibabaTongyi({
     apiKey: API_KEY,
     model: "qwen-plus", // qwen3.5-27b
     temperature: 0.1,
