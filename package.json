@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",
+    "@langchain/langgraph": "^1.2.0",
     "@langchain/langgraph-sdk": "^1.6.5",
+    "@langchain/ollama": "^1.2.6",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
     "antd": "^6.3.1",

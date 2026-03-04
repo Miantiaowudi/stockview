@@ -8,7 +8,6 @@ import Link from 'next/link'
 import KLineChart from '../components/KLineChart'
 import TradeTable from '../components/TradeTable'
 import StockAnalysis from './components/StockAnalysis'
-import TradeTable from '../components/TradeTable'
 
 interface Trade {
   id: string
@@ -329,10 +328,6 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
         <div className="mb-8">
           <StockAnalysis stockCode={stockCode} stockName={stockName} />
         </div>
-
-        {/* 成交明细 */}
-        {/* K线图 */}
-        <KLineChart klineData={klineData} trades={trades} />
 
         {/* 成交明细 */}
         <TradeTable trades={trades} />

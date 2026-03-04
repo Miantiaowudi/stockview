@@ -16,32 +16,41 @@ export default function StockAnalysis({
   const [error, setError] = useState<string | null>(null)
   const [analysis, setAnalysis] = useState<any>(null)
   const [logs, setLogs] = useState<string[]>([])
-
+  const [recommendation, setRecommendation] = useState("");
+  
   const handleAnalyze = async () => {
-    setLoading(true)
-    setError(null)
-    setLogs(['🔄 正在连接智能体...'])
-
-    try {
-      const stream = streamStockAnalysis(stockCode)
-      
-      for await (const event of stream) {
-        // 更新消息
-        if (event.messages) {
-          setLogs(event.messages)
+    const response = await fetch("/api/analysis", {
+      method: "POST",
+      body: JSON.stringify({ ticker:stockCode }),
+    });
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+  
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+  
+      const chunk = decoder.decode(value);
+      const lines = chunk.split("\n\n").filter(Boolean);
+  
+      for (const line of lines) {
+        const data = JSON.parse(line);
+  
+        if (data.type === "token") {
+          if (data.node === "analyze") {
+            setAnalysis(prev => prev + data.chunk); // 逐字累加分析
+          } else if (data.node === "recommend") {
+            setRecommendation(prev => prev + data.chunk); // 逐字累加建议
+          }
         }
-        // 更新数据
-        if (event.data) {
-          setAnalysis(event.data)
+        
+        // 处理节点完成后的最终消息
+        if (data.messages) {
+          console.log("状态更新:", data.messages);
         }
       }
-    } catch (err) {
-      console.error('分析失败:', err)
-      setError(err instanceof Error ? err.message : '分析失败')
-    } finally {
-      setLoading(false)
     }
-  }
+  };
 
   if (!analysis && !loading) {
     return (
@@ -112,8 +121,6 @@ export default function StockAnalysis({
   const displayName = data.name || stockName || stockCode
   const currentPrice = data.price || 0
   const changePct = data.change_pct || 0
-  const analysisText = analysis.analysis || ''
-  const recommendation = analysis.recommendation || ''
 
   return (
     <div className="space-y-4">
@@ -144,11 +151,11 @@ export default function StockAnalysis({
       </div>
 
       {/* AI 分析 */}
-      {analysisText && (
+      {analysis && (
         <div className="card">
           <h4 className="font-semibold text-slate-800 mb-3">📈 AI 深度分析</h4>
           <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap">
-            {analysisText}
+            {analysis}
           </div>
         </div>
       )}
