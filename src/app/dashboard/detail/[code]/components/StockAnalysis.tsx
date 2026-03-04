@@ -6,11 +6,13 @@ import Markdown from 'react-markdown'
 interface StockAnalysisProps {
   stockCode: string
   stockName?: string
+  authToken?: string
 }
 
 export default function StockAnalysis({
   stockCode,
   stockName = '',
+  authToken = '',
 }: StockAnalysisProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,9 +30,13 @@ export default function StockAnalysis({
     setHasStarted(true)
     
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
       const response = await fetch("/api/analysis", {
         method: "POST",
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ ticker: stockCode }),
       });
 

@@ -32,6 +32,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   const stockCode = params.code
 
   const [user, setUser] = useState<any>(null)
+  const [authToken, setAuthToken] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(true)
   const [trades, setTrades] = useState<Trade[]>([])
@@ -44,11 +45,15 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, data: sessionData } = await supabase.auth.getUser()
       if (!user) {
         router.push('/auth/login')
       } else {
         setUser(user)
+        // 获取access token
+        if (sessionData.session) {
+          setAuthToken(sessionData.session.access_token)
+        }
       }
       setLoading(false)
     }
@@ -329,7 +334,7 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
 
         {/* AI 智能分析 */}
         <div className="mt-8">
-          <StockAnalysis stockCode={stockCode} stockName={stockName} />
+          <StockAnalysis stockCode={stockCode} stockName={stockName} authToken={authToken} />
         </div>
       </main>
     </div>
