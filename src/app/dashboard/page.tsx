@@ -275,6 +275,9 @@ export default function AnalyticsPage() {
 
   // 登出
   const handleLogout = async () => {
+    // 广播退出消息，让其他窗口刷新
+    const { broadcastLogout } = await import('@/hooks/useAuthSync')
+    broadcastLogout()
     await supabase.auth.signOut()
     router.push('/auth/login')
   }
