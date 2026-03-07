@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getStockNames, getStockPrices, StockPrice } from '@/lib/stockApi'
 import PositionList from './components/PositionList'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 // Export interfaces for components
 export interface Trade {
@@ -49,6 +50,14 @@ export interface CurrentPosition {
 }
 
 export default function AnalyticsPage() {
+  return (
+    <ErrorBoundary>
+      <AnalyticsPageContent />
+    </ErrorBoundary>
+  )
+}
+
+function AnalyticsPageContent() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [dataLoaded, setDataLoaded] = useState(false)
