@@ -1,12 +1,23 @@
-import Link from 'next/link'
-import type { Metadata } from 'next'
+'use client'
 
-export const metadata: Metadata = {
-  title: '关于 - StockView 股票投资管理平台',
-  description: '了解 StockView 项目、技术栈和开发团队',
-}
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase'
 
 export default function AboutPage() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+    checkUser()
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header */}
@@ -24,12 +35,23 @@ export default function AboutPage() {
             <Link href="/guide" className="text-slate-600 hover:text-blue-600 transition-colors">
               使用指南
             </Link>
-            <Link 
-              href="/auth/login" 
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-            >
-              立即登录
-            </Link>
+            {loading ? (
+              <div className="w-20 h-9 bg-slate-200 rounded-lg animate-pulse"></div>
+            ) : user ? (
+              <Link 
+                href="/dashboard" 
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+              >
+                进入仪表盘
+              </Link>
+            ) : (
+              <Link 
+                href="/auth/login" 
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                立即登录
+              </Link>
+            )}
           </nav>
         </div>
       </header>

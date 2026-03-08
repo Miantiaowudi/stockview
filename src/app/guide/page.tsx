@@ -1,12 +1,23 @@
-import Link from 'next/link'
-import type { Metadata } from 'next'
+'use client'
 
-export const metadata: Metadata = {
-  title: '使用指南 - StockView 股票投资管理平台',
-  description: 'StockView 使用指南，新手入门教程',
-}
+import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase'
 
 export default function GuidePage() {
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+    checkUser()
+  }, [])
+
   const steps = [
     {
       step: '01',
@@ -96,12 +107,23 @@ export default function GuidePage() {
             <Link href="/about" className="text-slate-600 hover:text-blue-600 transition-colors">
               关于
             </Link>
-            <Link 
-              href="/auth/login" 
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
-            >
-              立即登录
-            </Link>
+            {loading ? (
+              <div className="w-20 h-9 bg-slate-200 rounded-lg animate-pulse"></div>
+            ) : user ? (
+              <Link 
+                href="/dashboard" 
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+              >
+                进入仪表盘
+              </Link>
+            ) : (
+              <Link 
+                href="/auth/login" 
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+              >
+                立即登录
+              </Link>
+            )}
           </nav>
         </div>
       </header>
@@ -173,18 +195,29 @@ export default function GuidePage() {
         <div className="text-center mt-16">
           <p className="text-slate-600 mb-6">准备好开始了吗？</p>
           <div className="flex justify-center gap-4">
-            <Link 
-              href="/auth/register" 
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-            >
-              立即注册
-            </Link>
-            <Link 
-              href="/auth/login" 
-              className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              登录
-            </Link>
+            {user ? (
+              <Link 
+                href="/dashboard" 
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                进入仪表盘
+              </Link>
+            ) : (
+              <>
+                <Link 
+                  href="/auth/register" 
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                >
+                  立即注册
+                </Link>
+                <Link 
+                  href="/auth/login" 
+                  className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  登录
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
