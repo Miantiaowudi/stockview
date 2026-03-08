@@ -2,9 +2,10 @@
 
 <div align="center">
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
+[![React](https://img.shields.io/badge/React-19-blue)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://www.typescriptlang.org)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind CSS-3-06b6d4)](https://tailwindcss.com)
+[![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-4-06b6d4)](https://tailwindcss.com)
 [![Supabase](https://img.shields.io/badge/Supabase-3-3ecf8e)](https://supabase.com)
 
 **在线访问**: [https://stockview-one.vercel.app/](https://stockview-one.vercel.app/)
@@ -13,17 +14,18 @@
 
 ## 项目简介
 
-StockView 是一个基于 Next.js 14 构建的股票投资管理平台，帮助用户追踪和管理股票投资组合，提供实时行情分析、资产配置展示等功能。
+StockView 是一个基于 Next.js 16 构建的股票投资管理平台，帮助用户追踪和管理股票投资组合，提供实时行情分析、资产配置展示等功能。
 
 ## 技术栈
 
-| 技术 | 说明 |
-|------|------|
-| Next.js 14 | React 全栈框架 (App Router) |
-| TypeScript | 类型安全的 JavaScript 超集 |
-| Tailwind CSS | 原子化 CSS 样式框架 |
-| Supabase | 后端即服务 (Auth + Database) |
-| Recharts | 数据可视化图表 |
+| 技术         | 说明                         |
+| ------------ | ---------------------------- |
+| Next.js 16   | React 全栈框架 (App Router)  |
+| React 19     | UI 组件库                    |
+| TypeScript   | 类型安全的 JavaScript 超集   |
+| Tailwind CSS v4 | 原子化 CSS 样式框架       |
+| Supabase     | 后端即服务 (Auth + Database) |
+| Recharts     | 数据可视化图表               |
 
 ## 功能特性
 
