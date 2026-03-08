@@ -44,8 +44,6 @@ export default function RegisterPage() {
       password,
     })
 
-    console.log('signUp result:', { error, data })
-
     if (error) {
       const msg = error.message.toLowerCase()
       if (msg.includes('user already') || msg.includes('already registered')) {
