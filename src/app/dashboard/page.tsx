@@ -383,6 +383,12 @@ function AnalyticsPageContent() {
               <h1 className="text-lg font-bold text-slate-800">StockView 账户分析</h1>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
+              <Link href="/about" className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                关于
+              </Link>
+              <Link href="/guide" className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                指南
+              </Link>
               <Link 
                 href="/dashboard/import" 
                 className="px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 flex items-center gap-1"

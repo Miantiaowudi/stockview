@@ -162,7 +162,7 @@ export default function AboutPage() {
       <footer className="bg-slate-900 text-slate-400 py-8">
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-6">
-            <p>© 2024 StockView. Built with ❤️</p>
+            <p>© 2026 StockView. Built with ❤️</p>
           </div>
           <div className="flex justify-center gap-6">
             <Link href="/guide" className="text-slate-400 hover:text-white transition-colors">
