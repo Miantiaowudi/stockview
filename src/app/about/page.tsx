@@ -39,10 +39,10 @@ export default function AboutPage() {
               <div className="w-20 h-9 bg-slate-200 rounded-lg animate-pulse"></div>
             ) : user ? (
               <Link 
-                href="/dashboard" 
+                href="/" 
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
               >
-                进入仪表盘
+                回到主页
               </Link>
             ) : (
               <Link 
