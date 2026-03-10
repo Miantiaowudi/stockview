@@ -103,7 +103,7 @@ export default function ImportPage() {
                 返回看板
               </Link>
               <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
-              <button onClick={handleLogout} className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+              <button onClick={handleLogout} className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 cursor-pointer">
                 退出
               </button>
             </div>

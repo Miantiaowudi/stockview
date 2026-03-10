@@ -62,7 +62,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 page-enter">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 page-enter">
+      {/* Top Links */}
+      <div className="w-full max-w-md flex justify-end gap-4 mb-4">
+        <Link href="/about" className="text-sm text-slate-500 hover:text-blue-600 transition-colors">
+          关于
+        </Link>
+        <Link href="/guide" className="text-sm text-slate-500 hover:text-blue-600 transition-colors">
+          指南
+        </Link>
+      </div>
+
       <div className="w-full max-w-md">
         {/* Logo & Title */}
         <div className="text-center mb-8">
