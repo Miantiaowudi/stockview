@@ -49,38 +49,42 @@ export default function StockAnalysis({
   const rafRef = useRef<number | null>(null)
   const isFlushingRef = useRef(false)
 
-  // ========== 自动滚动控制 ==========
-  const shouldAutoScroll = useRef(true)
-  const contentEndRef = useRef<HTMLDivElement>(null)
+  // ========== 自动滚动控制（基于视口位置）==========
+  const atBottomRef = useRef(true)
+
+  // 判断是否在视口底部（距离底部 100px 以内）
+  const checkAtBottom = useCallback(() => {
+    const scrollTop = window.scrollY
+    const windowHeight = window.innerHeight
+    const docHeight = document.documentElement.scrollHeight
+    const distanceToBottom = docHeight - scrollTop - windowHeight
+    return distanceToBottom < 100
+  }, [])
 
   // 滚动到底部
   const scrollToBottom = useCallback(() => {
-    if (!shouldAutoScroll.current) return
+    if (!atBottomRef.current) return
     
-    // 使用 smooth 滚动，但只在需要时滚动
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth'
     })
   }, [])
 
-  // 监听用户交互 - 取消自动滚动
+  // 监听滚动 - 实时判断是否在底部
   useEffect(() => {
-    const handleUserInteraction = () => {
-      shouldAutoScroll.current = false
+    const handleScroll = () => {
+      atBottomRef.current = checkAtBottom()
     }
 
-    // 监听滚动、点击、键盘事件
-    window.addEventListener('scroll', handleUserInteraction, { passive: true })
-    window.addEventListener('click', handleUserInteraction, { passive: true })
-    window.addEventListener('keydown', handleUserInteraction, { passive: true })
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    // 初始化检查
+    atBottomRef.current = checkAtBottom()
 
     return () => {
-      window.removeEventListener('scroll', handleUserInteraction)
-      window.removeEventListener('click', handleUserInteraction)
-      window.removeEventListener('keydown', handleUserInteraction)
+      window.removeEventListener('scroll', handleScroll)
     }
-  }, [])
+  }, [checkAtBottom])
 
   // 刷新缓冲区
   const flushBuffers = useCallback(() => {
@@ -133,7 +137,7 @@ export default function StockAnalysis({
     analysisBuffer.current = ""
     recommendationBuffer.current = ""
     isFlushingRef.current = false
-    shouldAutoScroll.current = true  // 开始分析时启用自动滚动
+    atBottomRef.current = true  // 开始分析时假设在底部
     
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -319,9 +323,6 @@ export default function StockAnalysis({
             </div>
           </div>
         )}
-
-        {/* 滚动锚点 */}
-        <div ref={contentEndRef} />
 
         {loading && hasContent && (
           <div className="mt-4 text-center text-sm text-blue-600 animate-pulse">
