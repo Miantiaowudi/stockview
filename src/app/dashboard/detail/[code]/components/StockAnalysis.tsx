@@ -114,8 +114,10 @@ export default function StockAnalysis({
       if (newRecommendation) {
         setRecommendation(prev => prev + newRecommendation)
       }
-      // 刷新后尝试滚动
-      scrollToBottom()
+      // 刷新后尝试滚动（仅当页面在底部区域时）
+      if (atBottomRef.current) {
+        scrollToBottom()
+      }
     }
     
     isFlushingRef.current = false
