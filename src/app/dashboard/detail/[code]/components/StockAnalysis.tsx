@@ -42,6 +42,7 @@ export default function StockAnalysis({
   const [recommendation, setRecommendation] = useState<string>("")
   const [data, setData] = useState<{name?: string; price?: number; change_pct?: number} | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
+  const [showScrollButton, setShowScrollButton] = useState(false)
   
   // ========== 缓冲区 + requestAnimationFrame ==========
   const analysisBuffer = useRef("")
@@ -74,7 +75,12 @@ export default function StockAnalysis({
   // 监听滚动 - 实时判断是否在底部
   useEffect(() => {
     const handleScroll = () => {
-      atBottomRef.current = checkAtBottom()
+      const isAtBottom = checkAtBottom()
+      atBottomRef.current = isAtBottom
+      
+      // 有内容且不在底部时显示按钮
+      const hasContent = analysis.length > 0 || recommendation.length > 0
+      setShowScrollButton(hasContent && !isAtBottom)
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -84,7 +90,7 @@ export default function StockAnalysis({
     return () => {
       window.removeEventListener('scroll', handleScroll)
     }
-  }, [checkAtBottom])
+  }, [checkAtBottom, analysis, recommendation])
 
   // 刷新缓冲区
   const flushBuffers = useCallback(() => {
@@ -330,6 +336,21 @@ export default function StockAnalysis({
           </div>
         )}
       </div>
+
+      {/* 滚动到底部按钮 - 仅在有内容且不在底部时显示 */}
+      {showScrollButton && (
+        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+          <button
+            onClick={scrollToBottom}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all text-sm font-medium"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            </svg>
+            滚动到底部
+          </button>
+        </div>
+      )}
     </div>
   )
 }
