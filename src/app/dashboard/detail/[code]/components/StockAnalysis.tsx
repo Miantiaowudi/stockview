@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 interface KLineItem {
@@ -44,21 +44,50 @@ export default function StockAnalysis({
   const [hasStarted, setHasStarted] = useState(false)
   
   // ========== 缓冲区 + requestAnimationFrame ==========
-  // 缓冲区：累积收到的字符
   const analysisBuffer = useRef("")
   const recommendationBuffer = useRef("")
-  
-  // RAF 引用：控制刷新节奏
   const rafRef = useRef<number | null>(null)
   const isFlushingRef = useRef(false)
 
-  // 刷新缓冲区：将累积的字符批量更新到状态
+  // ========== 自动滚动控制 ==========
+  const shouldAutoScroll = useRef(true)
+  const contentEndRef = useRef<HTMLDivElement>(null)
+
+  // 滚动到底部
+  const scrollToBottom = useCallback(() => {
+    if (!shouldAutoScroll.current) return
+    
+    // 使用 smooth 滚动，但只在需要时滚动
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    })
+  }, [])
+
+  // 监听用户交互 - 取消自动滚动
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      shouldAutoScroll.current = false
+    }
+
+    // 监听滚动、点击、键盘事件
+    window.addEventListener('scroll', handleUserInteraction, { passive: true })
+    window.addEventListener('click', handleUserInteraction, { passive: true })
+    window.addEventListener('keydown', handleUserInteraction, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleUserInteraction)
+      window.removeEventListener('click', handleUserInteraction)
+      window.removeEventListener('keydown', handleUserInteraction)
+    }
+  }, [])
+
+  // 刷新缓冲区
   const flushBuffers = useCallback(() => {
     let hasUpdate = false
     let newAnalysis = ""
     let newRecommendation = ""
     
-    // 取出缓冲区内容
     if (analysisBuffer.current) {
       newAnalysis = analysisBuffer.current
       analysisBuffer.current = ""
@@ -70,7 +99,6 @@ export default function StockAnalysis({
       hasUpdate = true
     }
     
-    // 批量更新状态（减少 React 渲染次数）
     if (hasUpdate) {
       if (newAnalysis) {
         setAnalysis(prev => prev + newAnalysis)
@@ -78,12 +106,14 @@ export default function StockAnalysis({
       if (newRecommendation) {
         setRecommendation(prev => prev + newRecommendation)
       }
+      // 刷新后尝试滚动
+      scrollToBottom()
     }
     
     isFlushingRef.current = false
-  }, [])
+  }, [scrollToBottom])
 
-  // 使用 requestAnimationFrame 节流渲染
+  // 调度刷新
   const scheduleFlush = useCallback(() => {
     if (isFlushingRef.current) return
     isFlushingRef.current = true
@@ -103,6 +133,7 @@ export default function StockAnalysis({
     analysisBuffer.current = ""
     recommendationBuffer.current = ""
     isFlushingRef.current = false
+    shouldAutoScroll.current = true  // 开始分析时启用自动滚动
     
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -143,9 +174,7 @@ export default function StockAnalysis({
             
             if (parsed.type === "token") {
               if (parsed.node === "analyze") {
-                // 累积到缓冲区，而不是直接更新状态
                 analysisBuffer.current += parsed.chunk
-                // 调度刷新
                 scheduleFlush()
               } else if (parsed.node === "recommend") {
                 recommendationBuffer.current += parsed.chunk
@@ -162,7 +191,6 @@ export default function StockAnalysis({
         }
       }
       
-      // 流结束后确保缓冲区刷新完毕
       flushBuffers()
       setLoading(false)
       
@@ -170,7 +198,6 @@ export default function StockAnalysis({
       setError(err.message || "分析失败，请重试")
       setLoading(false)
     } finally {
-      // 清理 RAF
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current)
         rafRef.current = null
@@ -178,7 +205,7 @@ export default function StockAnalysis({
     }
   };
 
-  // 初始状态 - 显示开始分析按钮
+  // 初始状态
   if (!hasStarted) {
     return (
       <div className="card p-6">
@@ -207,7 +234,7 @@ export default function StockAnalysis({
     )
   }
 
-  // 加载中状态（且没有内容时显示骨架屏）
+  // 加载中（无内容）
   const hasContent = analysis || recommendation
   if (loading && !hasContent) {
     return (
@@ -218,14 +245,11 @@ export default function StockAnalysis({
             🤖 AI 智能分析
           </h2>
         </div>
-        
-        {/* 加载动画 */}
         <div className="animate-pulse space-y-3">
           <div className="h-4 bg-slate-200 rounded w-3/4"></div>
           <div className="h-4 bg-slate-200 rounded w-1/2"></div>
           <div className="h-4 bg-slate-200 rounded w-2/3"></div>
         </div>
-        
         <div className="mt-4 text-center text-sm text-blue-600 animate-pulse">
           ⏳ AI 正在分析中...
         </div>
@@ -258,7 +282,6 @@ export default function StockAnalysis({
 
   return (
     <div className="card p-6">
-      {/* 头部 */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
           <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
@@ -273,36 +296,39 @@ export default function StockAnalysis({
         </button>
       </div>
 
-      {/* AI 深度分析 */}
-      {analysis && (
-        <div className="mb-6">
-          <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
-            📈 AI 深度分析
-          </h3>
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+      {/* 内容区域 */}
+      <div>
+        {analysis && (
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              📈 AI 深度分析
+            </h3>
+            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
               <MarkdownRenderer content={analysis} />
             </div>
           </div>
-      )}
+        )}
 
-      {/* 投资建议 */}
-      {recommendation && (
-        <div className="mb-6">
-          <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
-            🎯 投资建议
-          </h3>
-          <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+        {recommendation && (
+          <div className="mb-6">
+            <h3 className="text-base font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              🎯 投资建议
+            </h3>
+            <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
               <MarkdownRenderer content={recommendation} />
             </div>
-          </div> 
-      )}
+          </div>
+        )}
 
-      {/* 流式加载指示器 */}
-      {loading && hasContent && (
-        <div className="mt-4 text-center text-sm text-blue-600 animate-pulse">
-          ⏳ 继续生成中...
-        </div>
-      )}
+        {/* 滚动锚点 */}
+        <div ref={contentEndRef} />
+
+        {loading && hasContent && (
+          <div className="mt-4 text-center text-sm text-blue-600 animate-pulse">
+            ⏳ 继续生成中...
+          </div>
+        )}
+      </div>
     </div>
   )
 }
