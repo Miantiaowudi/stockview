@@ -64,8 +64,6 @@ export default function StockAnalysis({
 
   // 滚动到底部
   const scrollToBottom = useCallback(() => {
-    if (!atBottomRef.current) return
-    
     window.scrollTo({
       top: document.documentElement.scrollHeight,
       behavior: 'smooth'
