@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 interface KLineItem {
@@ -43,13 +43,66 @@ export default function StockAnalysis({
   const [data, setData] = useState<{name?: string; price?: number; change_pct?: number} | null>(null)
   const [hasStarted, setHasStarted] = useState(false)
   
+  // ========== 缓冲区 + requestAnimationFrame ==========
+  // 缓冲区：累积收到的字符
+  const analysisBuffer = useRef("")
+  const recommendationBuffer = useRef("")
+  
+  // RAF 引用：控制刷新节奏
+  const rafRef = useRef<number | null>(null)
+  const isFlushingRef = useRef(false)
+
+  // 刷新缓冲区：将累积的字符批量更新到状态
+  const flushBuffers = useCallback(() => {
+    let hasUpdate = false
+    let newAnalysis = ""
+    let newRecommendation = ""
+    
+    // 取出缓冲区内容
+    if (analysisBuffer.current) {
+      newAnalysis = analysisBuffer.current
+      analysisBuffer.current = ""
+      hasUpdate = true
+    }
+    if (recommendationBuffer.current) {
+      newRecommendation = recommendationBuffer.current
+      recommendationBuffer.current = ""
+      hasUpdate = true
+    }
+    
+    // 批量更新状态（减少 React 渲染次数）
+    if (hasUpdate) {
+      if (newAnalysis) {
+        setAnalysis(prev => prev + newAnalysis)
+      }
+      if (newRecommendation) {
+        setRecommendation(prev => prev + newRecommendation)
+      }
+    }
+    
+    isFlushingRef.current = false
+  }, [])
+
+  // 使用 requestAnimationFrame 节流渲染
+  const scheduleFlush = useCallback(() => {
+    if (isFlushingRef.current) return
+    isFlushingRef.current = true
+    rafRef.current = requestAnimationFrame(flushBuffers)
+  }, [flushBuffers])
+
   const handleAnalyze = async () => {
+    // 重置状态
     setLoading(true)
     setError(null)
     setAnalysis("")
     setRecommendation("")
     setData(null)
     setHasStarted(true)
+    
+    // 重置缓冲区
+    analysisBuffer.current = ""
+    recommendationBuffer.current = ""
+    isFlushingRef.current = false
     
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -90,12 +143,14 @@ export default function StockAnalysis({
             
             if (parsed.type === "token") {
               if (parsed.node === "analyze") {
-                setAnalysis(prev => prev + parsed.chunk);
+                // 累积到缓冲区，而不是直接更新状态
+                analysisBuffer.current += parsed.chunk
+                // 调度刷新
+                scheduleFlush()
               } else if (parsed.node === "recommend") {
-                setRecommendation(prev => prev + parsed.chunk);
+                recommendationBuffer.current += parsed.chunk
+                scheduleFlush()
               }
-              // 有内容时结束loading状态
-              setLoading(false);
             }
             
             if (parsed.data) {
@@ -106,10 +161,20 @@ export default function StockAnalysis({
           }
         }
       }
+      
+      // 流结束后确保缓冲区刷新完毕
+      flushBuffers()
+      setLoading(false)
+      
     } catch (err: any) {
       setError(err.message || "分析失败，请重试")
-    } finally {
       setLoading(false)
+    } finally {
+      // 清理 RAF
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
     }
   };
 
@@ -206,7 +271,7 @@ export default function StockAnalysis({
         >
           🔄 重新分析
         </button>
-        </div>
+      </div>
 
       {/* AI 深度分析 */}
       {analysis && (
