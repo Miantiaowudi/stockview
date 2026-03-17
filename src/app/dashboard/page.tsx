@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { getStockPrices, StockPrice } from '@/lib/stockApi'
 import PositionList from './components/PositionList'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { useDashboardUser } from '@/components/DashboardUserProvider'
 
 // Export interfaces for components
 export interface Trade {
@@ -58,8 +59,8 @@ export default function AnalyticsPage() {
 }
 
 function AnalyticsPageContent() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const user = useDashboardUser()
+  const [loading] = useState(false)
   const [dataLoaded, setDataLoaded] = useState(false)
   const [trades, setTrades] = useState<Trade[]>([])
   const [clearedPositions, setClearedPositions] = useState<ClearedPosition[]>([])
@@ -86,18 +87,6 @@ function AnalyticsPageContent() {
 
 
   // 检查用户登录
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login')
-      } else {
-        setUser(user)
-      }
-      setLoading(false)
-    }
-    checkUser()
-  }, [supabase, router])
 
   // 加载交易数据并计算
   useEffect(() => {
@@ -565,4 +554,5 @@ function AnalyticsPageContent() {
     </div>
   )
 }
+
 

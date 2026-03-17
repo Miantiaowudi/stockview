@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { getStockPrices, StockPrice } from '@/lib/stockApi'
+import { useDashboardUser } from '@/components/DashboardUserProvider'
 import Link from 'next/link'
 import KLineChart from '../components/KLineChart'
 import TradeTable from '../components/TradeTable'
@@ -31,9 +32,9 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   const params = use(props.params)
   const stockCode = params.code
 
-  const [user, setUser] = useState<any>(null)
+  const user = useDashboardUser()
   const [authToken, setAuthToken] = useState<string>('')
-  const [loading, setLoading] = useState(true)
+  const [loading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
   const [trades, setTrades] = useState<Trade[]>([])
   const [stockName, setStockName] = useState('')
@@ -42,20 +43,6 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   
   const router = useRouter()
   const supabase = createClient()
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login')
-      } else {
-        setUser(user)
-      }
-      setLoading(false)
-    }
-    checkUser()
-
-  }, [supabase, router])
 
   useEffect(() => {
     if (!stockCode) return
@@ -350,3 +337,4 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
     </div>
   )
 }
+

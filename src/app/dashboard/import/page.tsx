@@ -1,33 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ImportTab from './components/ImportTab'
 import ManualEntryTab from './components/ManualEntryTab'
+import { useDashboardUser } from '@/components/DashboardUserProvider'
 
 export default function ImportPage() {
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const user = useDashboardUser()
+  const [loading] = useState(false)
   const [activeTab, setActiveTab] = useState<'import' | 'manual'>('import')
   const [importMessage, setImportMessage] = useState<string | null>(null)
   
   const router = useRouter()
   const supabase = createClient()
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login')
-      } else {
-        setUser(user)
-      }
-      setLoading(false)
-    }
-    checkUser()
-  }, [supabase, router])
 
   const handleImportComplete = (message: string) => {
     setImportMessage(message)
@@ -175,3 +163,4 @@ export default function ImportPage() {
     </div>
   )
 }
+
