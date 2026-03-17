@@ -1,7 +1,5 @@
-// 使用内部API路由（服务器端调用，避免CORS问题）
 const API_BASE = '/api/stocks'
 
-// 股票价格信息
 export interface StockPrice {
   name: string
   code: string
@@ -14,32 +12,16 @@ export interface StockPrice {
   amount: number
 }
 
-// 批量获取股票名称
-export async function getStockNames(stockCodes: string[]): Promise<Record<string, string>> {
-  if (stockCodes.length === 0) return {}
-  
-  try {
-    const codesParam = stockCodes.join(',')
-    const response = await fetch(`${API_BASE}?codes=${codesParam}`)
-    const data = await response.json()
-    return data
-  } catch (error) {
-    console.error('批量获取股票名称失败:', error)
-    return {}
-  }
-}
-
-// 批量获取股票实时价格
 export async function getStockPrices(stockCodes: string[]): Promise<Record<string, StockPrice>> {
   if (stockCodes.length === 0) return {}
-  
+
   try {
     const codesParam = stockCodes.join(',')
     const response = await fetch(`${API_BASE}/price?codes=${codesParam}`)
     const data = await response.json()
     return data
   } catch (error) {
-    console.error('获取股票价格失败:', error)
+    console.error('Failed to fetch stock prices:', error)
     return {}
   }
 }

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getStockNames, getStockPrices, StockPrice } from '@/lib/stockApi'
+import { getStockPrices, StockPrice } from '@/lib/stockApi'
 import PositionList from './components/PositionList'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
@@ -204,27 +204,24 @@ function AnalyticsPageContent() {
       }
     })
 
-    // 获取股票名称
+    // 从 /price 接口读取股票名称与价格，避免重复调用 /stocks
     const allCodes = [...cleared.map(c => c.stock_code), ...current.map(c => c.stock_code)]
     if (allCodes.length > 0) {
       try {
-        const names = await getStockNames(allCodes)
+        const prices = await getStockPrices(allCodes)
+        setStockPrices(prices)
         const clearedWithNames = cleared.map(c => ({
           ...c,
-          stock_name: names[c.stock_code] || c.stock_code
+          stock_name: prices[c.stock_code]?.name || c.stock_code
         }))
         const currentWithNames = current.map(c => ({
           ...c,
-          stock_name: names[c.stock_code] || c.stock_code
+          stock_name: prices[c.stock_code]?.name || c.stock_code
         }))
         setClearedPositions(clearedWithNames)
-        setCurrentPositions(currentWithNames)
 
-        // 获取当前持仓的实时价格
+        // 为当前持仓计算实时盈亏
         if (currentWithNames.length > 0) {
-          const prices = await getStockPrices(currentWithNames.map(c => c.stock_code))
-          setStockPrices(prices)
-          
           // 计算浮动盈亏和当日盈亏
           const today = new Date()
           const dayOfWeek = today.getDay()
@@ -265,7 +262,7 @@ function AnalyticsPageContent() {
           setDataLoaded(true)
         }
       } catch (e) {
-        console.error('获取股票名称失败:', e)
+        console.error('Failed to fetch stock prices:', e)
         setClearedPositions(cleared)
         setCurrentPositions(current)
         setCurrentPnl(0)
@@ -568,3 +565,4 @@ function AnalyticsPageContent() {
     </div>
   )
 }
+

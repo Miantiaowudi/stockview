@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { getStockNames, getStockPrices, StockPrice } from '@/lib/stockApi'
+import { getStockPrices, StockPrice } from '@/lib/stockApi'
 import Link from 'next/link'
 import KLineChart from '../components/KLineChart'
 import TradeTable from '../components/TradeTable'
@@ -104,23 +104,21 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       const totalSellQty = sellTradesData.reduce((sum: number, t: Trade) => sum + t.quantity, 0)
       const holdQuantity = totalBuyQty - totalSellQty
       
-      // 如果有持仓，获取实时价格
-      if (holdQuantity > 0) {
-        try {
-          const prices = await getStockPrices([stockCode])
-          if (prices[stockCode]) {
-            setStockPrice(prices[stockCode])
-          }
-        } catch (e) {
-          console.error('获取实时价格失败:', e)
-        }
-      }
-      
+      // 从 /price 接口读取股票名称；有持仓时同时读取实时价格
       try {
-        const names = await getStockNames([stockCode])
-        setStockName(names[stockCode] || stockCode)
+        const prices = await getStockPrices([stockCode])
+        const priceData = prices[stockCode]
+        setStockName(priceData?.name || stockCode)
+
+        if (holdQuantity > 0 && priceData) {
+          setStockPrice(priceData)
+        } else {
+          setStockPrice(null)
+        }
       } catch (e) {
+        console.error('Failed to fetch stock price:', e)
         setStockName(stockCode)
+        setStockPrice(null)
       }
       setDataLoading(false)
     }
