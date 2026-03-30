@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { getStockPrices, StockPrice } from '@/lib/stockApi'
+import { getStockPrices, StockPrice, isMarketOpen, getNextMarketTime } from '@/lib/stockApi'
 import PositionList from './components/PositionList'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { useDashboardUser } from '@/components/DashboardUserProvider'
@@ -72,6 +72,52 @@ function AnalyticsPageContent() {
   const [totalSell, setTotalSell] = useState(0)
   const [currentPnl, setCurrentPnl] = useState(0)
   const [showData, setShowData] = useState(true)
+  const [marketStatus, setMarketStatus] = useState<{ isOpen: boolean; label: string }>({ isOpen: false, label: '休市' })
+
+  // 刷新股票价格
+  const refreshPrices = useCallback(async (positions: CurrentPosition[]) => {
+    if (positions.length === 0) return
+
+    const codes = positions.map(p => p.stock_code)
+    try {
+      const prices = await getStockPrices(codes)
+      setStockPrices(prev => ({ ...prev, ...prices }))
+
+      // 更新当前持仓的价格和盈亏
+      const updated = positions.map(pos => {
+        const price = prices[pos.stock_code]
+        if (!price) return pos
+
+        const currentMarketValue = price.currentPrice * pos.hold_quantity
+        const floatingPnl = currentMarketValue - pos.total_cost
+        const floatingPnlRate = (floatingPnl / pos.total_cost) * 100
+
+        const dayOfWeek = new Date().getDay()
+        let dailyPnl = 0
+        let dailyPnlRate = 0
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          dailyPnl = (price.currentPrice - price.yesterdayClose) * pos.hold_quantity
+          dailyPnlRate = ((price.currentPrice - price.yesterdayClose) / price.yesterdayClose) * 100
+        }
+
+        return {
+          ...pos,
+          current_price: price.currentPrice,
+          yesterday_close: price.yesterdayClose,
+          floating_pnl: floatingPnl,
+          floating_pnl_rate: floatingPnlRate,
+          daily_pnl: dailyPnl,
+          daily_pnl_rate: dailyPnlRate
+        }
+      })
+
+      setCurrentPositions(updated)
+      const totalCurrentPnl = updated.reduce((sum, pos) => sum + (pos.daily_pnl || 0), 0)
+      setCurrentPnl(totalCurrentPnl)
+    } catch (e) {
+      console.error('刷新价格失败:', e)
+    }
+  }, [])
   
   const router = useRouter()
 
@@ -111,6 +157,30 @@ function AnalyticsPageContent() {
 
     loadData()
   }, [user, supabase])
+
+  // 市场状态和定时轮询
+  useEffect(() => {
+    // 更新市场状态
+    const updateMarketStatus = () => {
+      const status = getNextMarketTime()
+      setMarketStatus({ isOpen: status.isOpen, label: status.label })
+    }
+
+    updateMarketStatus()
+    const statusInterval = setInterval(updateMarketStatus, 60000) // 每分钟检查一次市场状态
+
+    // 定时刷新价格
+    const refreshInterval = setInterval(() => {
+      if (isMarketOpen() && currentPositions.length > 0 && dataLoaded) {
+        refreshPrices(currentPositions)
+      }
+    }, 5000) // 开盘时每5秒刷新
+
+    return () => {
+      clearInterval(statusInterval)
+      clearInterval(refreshInterval)
+    }
+  }, [currentPositions, dataLoaded, refreshPrices])
 
   // 计算已清仓和当前持仓
   const calculatePositions = async (trades: Trade[]) => {
@@ -367,6 +437,17 @@ function AnalyticsPageContent() {
                 </svg>
               </div>
               <h1 className="text-lg font-bold text-slate-800">StockView 账户分析</h1>
+              {/* 市场状态指示器 */}
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
+                marketStatus.isOpen 
+                  ? 'bg-green-50 text-green-700' 
+                  : 'bg-slate-100 text-slate-500'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  marketStatus.isOpen ? 'bg-green-500 animate-pulse' : 'bg-slate-400'
+                }`}></span>
+                {marketStatus.isOpen ? '实时' : marketStatus.label}
+              </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
               <Link href="/about" className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
