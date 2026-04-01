@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import Link from 'next/link'
 import { CurrentPosition, ClearedPosition } from '../page'
 
@@ -11,7 +12,7 @@ interface PositionCardProps {
   showData?: boolean
 }
 
-export default function PositionCard({ position, type, showData = true }: PositionCardProps) {
+function PositionCard({ position, type, showData = true }: PositionCardProps) {
   const isCurrent = type === 'current'
   const currentPos = position as CurrentPosition
   const clearedPos = position as ClearedPosition
@@ -106,3 +107,22 @@ export default function PositionCard({ position, type, showData = true }: Positi
     </Link>
   )
 }
+
+export default memo(PositionCard, (prev, next) => {
+  // 自定义比较：只有当关键数据变化时才重渲染
+  return (
+    prev.position.stock_code === next.position.stock_code &&
+    prev.position.stock_name === next.position.stock_name &&
+    prev.type === next.type &&
+    prev.showData === next.showData &&
+    // 当前持仓额外比较
+    (prev.type !== 'current' || (
+      (prev.position as CurrentPosition).current_price === (next.position as CurrentPosition).current_price &&
+      (prev.position as CurrentPosition).floating_pnl === (next.position as CurrentPosition).floating_pnl
+    )) &&
+    // 已清仓额外比较
+    (prev.type !== 'cleared' || (
+      (prev.position as ClearedPosition).profit_loss === (next.position as ClearedPosition).profit_loss
+    ))
+  )
+})
