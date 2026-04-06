@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(git checkout:*)",
+      "Bash(npm search:*)",
+      "Bash(npm install:*)",
+      "Bash(npm list:*)",
+      "Bash(node node_modules/@fission-ai/openspec/bin/openspec.js --help)",
+      "Bash(git branch:*)",
+      "Bash(node:*)"
+    ]
+  }
+}
