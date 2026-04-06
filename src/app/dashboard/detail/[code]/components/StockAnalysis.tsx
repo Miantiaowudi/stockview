@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { Button } from 'antd'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 interface KLineItem {
@@ -224,13 +225,13 @@ export default function StockAnalysis({
             <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
             🤖 AI 智能分析
           </h2>
-          <button
+          <Button
+            type="primary"
             onClick={handleAnalyze}
-            disabled={loading}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 text-sm font-medium"
+            loading={loading}
           >
             {loading ? '分析中...' : '🚀 开始分析'}
-          </button>
+          </Button>
         </div>
         <p className="text-slate-500 text-sm">
           点击按钮获取 AI 智能分析报告
@@ -276,12 +277,12 @@ export default function StockAnalysis({
             <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
             🤖 AI 智能分析
           </h2>
-          <button
+          <Button
+            type="primary"
             onClick={handleAnalyze}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             🔄 重试
-          </button>
+          </Button>
         </div>
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600">{error}</p>
@@ -297,13 +298,13 @@ export default function StockAnalysis({
           <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
           🤖 AI 智能分析
         </h2>
-        <button
+        <Button
+          type="text"
           onClick={handleAnalyze}
-          disabled={loading}
-          className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          loading={loading}
         >
           🔄 重新分析
-        </button>
+        </Button>
       </div>
 
       {/* 内容区域 */}
@@ -340,15 +341,17 @@ export default function StockAnalysis({
       {/* 滚动到底部按钮 - 仅在有内容且不在底部时显示 */}
       {showScrollButton && (
         <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-          <button
+          <Button
+            type="primary"
             onClick={scrollToBottom}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all text-sm font-medium"
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+            }
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
             滚动到底部
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { Component, ReactNode } from 'react'
+import { Button } from 'antd'
 
 interface Props {
   children: ReactNode
@@ -46,12 +47,9 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <h3 className="text-lg font-medium text-slate-800 mb-2">页面出错了</h3>
             <p className="text-slate-500 text-sm mb-4">请刷新页面重试</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
+            <Button type="primary" onClick={() => window.location.reload()}>
               刷新页面
-            </button>
+            </Button>
           </div>
         </div>
       )

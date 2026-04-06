@@ -1,0 +1,19 @@
+id: antd-button-migration
+title: Ant Design Button 组件迁移
+status: completed
+created: 2026-04-06
+completed: 2026-04-06
+priority: high
+components:
+  - ErrorBoundary
+  - dashboard/page
+  - dashboard/import/page
+  - dashboard/import/components/ImportTab
+  - dashboard/import/components/ManualEntryTab
+  - dashboard/detail/page
+  - dashboard/detail/components/StockAnalysis
+  - auth/login/page
+  - auth/register/page
+  - not-found
+  - guide/page
+  - about/page

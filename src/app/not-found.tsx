@@ -28,16 +28,10 @@ export default function NotFound() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link 
-            href="/"
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-          >
+          <Link href="/" className="ant-btn ant-btn-primary">
             返回首页
           </Link>
-          <Link 
-            href="/guide"
-            className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
-          >
+          <Link href="/guide" className="ant-btn">
             查看使用指南
           </Link>
         </div>

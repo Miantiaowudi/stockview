@@ -8,7 +8,15 @@
       "Bash(npm list:*)",
       "Bash(node node_modules/@fission-ai/openspec/bin/openspec.js --help)",
       "Bash(git branch:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm run:*)",
+      "Bash(git rm:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(git reset:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

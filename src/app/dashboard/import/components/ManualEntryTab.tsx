@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Modal, Form, InputNumber, Radio, DatePicker, TimePicker, Select, message } from 'antd'
+import { Modal, Form, InputNumber, Radio, DatePicker, TimePicker, Select, message, Button } from 'antd'
 import type { SelectProps } from 'antd'
 import dayjs from 'dayjs'
 
@@ -217,15 +217,13 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
           </h2>
           
           {/* Add Button */}
-          <button
-            onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-colors duration-200"
-          >
+          <Button type="primary" onClick={openAddModal} icon={
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            <span className="text-sm font-medium">添加一行</span>
-          </button>
+          }>
+            添加一行
+          </Button>
         </div>
 
         {/* Table with data */}
@@ -266,14 +264,11 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
                       <td>{row.commission?.toFixed(2) || '0.00'}</td>
                       <td>{row.stamp_duty?.toFixed(2) || '0.00'}</td>
                       <td>
-                        <button
-                          onClick={() => removeManualEntry(row.key)}
-                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
-                        >
+                        <Button type="text" danger onClick={() => removeManualEntry(row.key)} icon={
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
-                        </button>
+                        } />
                       </td>
                     </tr>
                   ))}
@@ -283,34 +278,19 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
 
             {/* Submit Button */}
             <div className="flex justify-center">
-              <button
+              <Button
+                type="primary"
                 onClick={handleManualSubmit}
-                disabled={submitting || manualEntries.length === 0}
-                className={`py-3 px-8 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
-                  manualEntries.length === 0
-                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                    : submitting
-                      ? 'bg-blue-600 text-white cursor-waiting'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/40'
-                }`}
-              >
-                {submitting ? (
-                  <>
-                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    提交中...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    确认提交
-                  </>
+                loading={submitting}
+                disabled={manualEntries.length === 0}
+                icon={!submitting && (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
                 )}
-              </button>
+              >
+                {submitting ? '提交中...' : '确认提交'}
+              </Button>
             </div>
           </>
         ) : (
@@ -376,13 +356,9 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
             <InputNumber min={0} step={0.01} precision={2} style={{ width: '100%' }} placeholder="0.00" />
           </Form.Item>
           <Form.Item>
-            <button
-              type="submit"
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200"
-              disabled={submitting}
-            >
+            <Button type="primary" htmlType="submit" block loading={submitting}>
               确认添加
-            </button>
+            </Button>
           </Form.Item>
         </Form>
       </Modal>

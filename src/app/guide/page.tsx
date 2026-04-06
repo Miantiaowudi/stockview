@@ -96,10 +96,7 @@ export default function GuidePage() {
             <Link href="/about" className="text-slate-600 hover:text-blue-600 transition-colors">
               关于
             </Link>
-            <Link 
-              href="/" 
-              className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors"
-            >
+            <Link href="/" className="ant-btn">
               返回
             </Link>
           </nav>
@@ -173,16 +170,10 @@ export default function GuidePage() {
         <div className="text-center mt-16">
           <p className="text-slate-600 mb-6">准备好开始了吗？</p>
           <div className="flex justify-center gap-4">
-            <Link 
-              href="/auth/register" 
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-            >
+            <Link href="/auth/register" className="ant-btn ant-btn-primary">
               立即注册
             </Link>
-            <Link 
-              href="/auth/login" 
-              className="px-6 py-3 bg-white border border-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
-            >
+            <Link href="/auth/login" className="ant-btn">
               登录
             </Link>
           </div>
