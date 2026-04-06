@@ -43,6 +43,7 @@ StockView 项目已安装 antd v6，部分 UI 组件使用自定义 `<button>` �
 | Dashboard | 显示/隐藏数据 | `Button` | 图标按钮 |
 | 导入页 | 添加按钮 | `Button` | 次要按钮 |
 | 导入页 | 删除行按钮 | `Button danger type="text"` | 危险操作-文字 |
+| 导入页 | 点击上传 | `Button` | 次要按钮 |
 | 导入页 | 确认导入 | `Button type="primary" loading` | 主操作 |
 | 手动录入 | 提交按钮 | `Button type="primary" loading` | 主操作 |
 | AI 分析 | 🚀 开始分析 | `Button type="primary" loading` | 主操作 |
@@ -123,6 +124,7 @@ import { Button } from 'antd'
 - [ ] 显示/隐藏数据正常
 - [ ] 添加行功能正常
 - [ ] 删除行功能正常
+- [ ] 点击上传按钮正常
 - [ ] 导入 loading 正常
 - [ ] 手动录入提交 loading 正常
 - [ ] AI 分析开始/重试/重新分析正常
