@@ -12,19 +12,21 @@
 ### 2.1 工作流结构
 
 ```
-START → fetch ─┬─→ indicators ─┐
-               ├─→ sentiment  ─┤
-               ├─→ fundamentals ┤
-               └────────────────┤
-                               ↓
-                            analyze
-                               ↓
-                          recommend
-                               ↓
-                               END
+START → ┌─────────────────────────────────────────┐
+        ↓           ↓           ↓           ↓
+     fetch   indicators  sentiment fundamentals
+     (并行)    (并行)      (并行)      (并行)
+        ↓           ↓           ↓           ↓
+        └───────────┴───────────┴───────────┘
+                        ↓
+                     analyze
+                        ↓
+                   recommend
+                        ↓
+                        END
 ```
 
-- `fetch` 节点：整合前端传入的原始数据（K线、交易记录）
+- `fetch` 节点：整合前端传入的原始数据（K线、交易记录），与其他三节点并行执行
 - `indicators` 节点：并行计算技术指标
 - `sentiment` 节点：并行获取新闻 + 情绪分析
 - `fundamentals` 节点：并行获取 Tushare 财务数据
