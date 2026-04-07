@@ -14,7 +14,7 @@
 ```
 START → ┌─────────────────────────────────────────┐
         ↓           ↓           ↓           ↓
-     fetch   indicators  sentiment fundamentals
+    holdings indicators  sentiment fundamentals
      (并行)    (并行)      (并行)      (并行)
         ↓           ↓           ↓           ↓
         └───────────┴───────────┴───────────┘
@@ -26,8 +26,8 @@ START → ┌──────────────────────�
                         END
 ```
 
-- `fetch` 节点：整合前端传入的原始数据（K线、交易记录），与其他三节点并行执行
-- `indicators` 节点：并行计算技术指标
+- `holdings` 节点（原 fetch）：专注用户持仓数据聚合（买入/卖出统计、平均成本、盈亏）
+- `indicators` 节点：计算技术指标 + 提取股价摘要（最新价、涨跌幅、近20K线）
 - `sentiment` 节点：并行获取新闻 + 情绪分析
 - `fundamentals` 节点：并行获取 Tushare 财务数据
 - `analyze` 节点：综合所有数据进行分析
@@ -81,20 +81,21 @@ interface Fundamentals {
 
 ## 3. 节点实现
 
-### 3.1 fetch 节点（保持不变）
+### 3.1 holdings 节点（原 fetch 节点）
 
-整合前端传入的原始数据，传递给后续并行节点。
+专注用户持仓数据聚合：
+- 从 `trades` 计算：总买入/卖出数量和金额、当前持仓数量、手续费总额、平均成本、当前盈亏
+- 返回结构化的持仓数据给 `analyze` 节点
 
 ### 3.2 indicators 节点
 
 **输入**：ticker, klineData
 
-**实现**：
-- 使用 `technical-analysis` 库计算 KDJ、MACD、RSI、布林带
-- 基于指标数值生成买卖信号（简单阈值判断）
-- 增强 prompt 让 LLM 做技术形态综合判断
+**职责**：
+- 计算 KDJ、MACD、RSI、布林带技术指标
+- 提取股价摘要：最新价、涨跌幅、近20条K线（供 analyze 使用，避免重复读取）
 
-**依赖**：`technical-analysis` npm 包
+**实现**：使用 `technical-analysis` 库计算各指标及买卖信号
 
 ### 3.3 sentiment 节点
 
