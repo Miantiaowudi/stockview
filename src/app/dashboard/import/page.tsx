@@ -1,69 +1,20 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from 'antd'
-import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ImportTab from './components/ImportTab'
 import ManualEntryTab from './components/ManualEntryTab'
-import { useDashboardUser } from '@/components/DashboardUserProvider'
+import { useLocalTrades } from '@/hooks/useLocalTrades'
 
 export default function ImportPage() {
-  const user = useDashboardUser()
-  const [loading] = useState(false)
   const [activeTab, setActiveTab] = useState<'import' | 'manual'>('import')
   const [importMessage, setImportMessage] = useState<string | null>(null)
-  
-  const router = useRouter()
-  const supabase = createClient()
+  const { reload } = useLocalTrades()
 
   const handleImportComplete = (message: string) => {
     setImportMessage(message)
+    reload()
     setTimeout(() => setImportMessage(null), 5000)
-  }
-
-  const handleLogout = async () => {
-    // 广播退出消息，让其他窗口刷新
-    const { broadcastLogout } = await import('@/hooks/useAuthSync')
-    broadcastLogout()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-slate-200 rounded-lg animate-pulse"></div>
-                <div className="h-6 w-40 bg-slate-200 rounded animate-pulse"></div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse"></div>
-                <div className="h-6 w-16 bg-slate-200 rounded animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        </header>
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
-              <div className="h-6 w-24 bg-slate-200 rounded animate-pulse mb-6"></div>
-              <div className="h-32 bg-slate-100 rounded-xl animate-pulse mb-6"></div>
-              <div className="h-4 w-32 bg-slate-200 rounded animate-pulse mb-3"></div>
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="h-8 bg-slate-100 rounded animate-pulse"></div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
   }
 
   return (
@@ -91,10 +42,6 @@ export default function ImportPage() {
               <Link href="/dashboard" className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
                 返回看板
               </Link>
-              <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
-              <Button danger size="small" onClick={handleLogout}>
-                退出
-              </Button>
             </div>
           </div>
         </div>
@@ -154,14 +101,13 @@ export default function ImportPage() {
         )}
 
         {activeTab === 'import' && (
-          <ImportTab user={user} supabase={supabase} onImportComplete={handleImportComplete} />
+          <ImportTab onImportComplete={handleImportComplete} />
         )}
 
         {activeTab === 'manual' && (
-          <ManualEntryTab user={user} supabase={supabase} onImportComplete={handleImportComplete} />
+          <ManualEntryTab onImportComplete={handleImportComplete} />
         )}
       </main>
     </div>
   )
 }
-

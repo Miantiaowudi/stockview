@@ -2,20 +2,20 @@
 
 import { useState, useRef } from 'react'
 import { Button } from 'antd'
-import { createClient } from '@/lib/supabase'
+import { useLocalTrades } from '@/hooks/useLocalTrades'
 
 const STANDARD_COLUMNS = [
-  '成交日期', '成交时间', '证券代码', '证券名称', '操作', 
+  '成交日期', '成交时间', '证券代码', '证券名称', '操作',
   '成交数量', '成交均价', '成交金额', '手续费', '印花税'
 ]
 
 const parseRow = (row: string[]) => {
   const date = row[0]
   const time = row[1]
-  const formattedDate = date.length === 8 
+  const formattedDate = date.length === 8
     ? `${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}`
     : date
-  
+
   return {
     trade_time: time ? `${formattedDate}T${time}` : formattedDate,
     stock_code: row[2],
@@ -29,18 +29,17 @@ const parseRow = (row: string[]) => {
 }
 
 interface ImportTabProps {
-  user: any
-  supabase: any
   onImportComplete?: (message: string) => void
 }
 
-export default function ImportTab({ user, supabase, onImportComplete }: ImportTabProps) {
+export default function ImportTab({ onImportComplete }: ImportTabProps) {
   const [uploading, setUploading] = useState(false)
   const [previewData, setPreviewData] = useState<any[]>([])
   const [importResult, setImportResult] = useState<{ success: boolean; message: string } | null>(null)
   const [currentFile, setCurrentFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { trades, addTrade, reload } = useLocalTrades()
 
   const parseCSV = (content: string) => {
     const lines = content.split('\n').filter(line => line.trim())
@@ -48,11 +47,11 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
 
     const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
     const matchCount = STANDARD_COLUMNS.filter(col => header.includes(col)).length
-    
+
     if (matchCount < 8) {
-      setImportResult({ 
-        success: false, 
-        message: `CSV格式不正确。请使用标准格式，表头应为：${STANDARD_COLUMNS.join(', ')}` 
+      setImportResult({
+        success: false,
+        message: `CSV格式不正确。请使用标准格式，表头应为：${STANDARD_COLUMNS.join(', ')}`
       })
       return null
     }
@@ -62,7 +61,6 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
       const parsed = parseRow(values)
       return {
         ...parsed,
-        user_id: user.id,
         broker_name: '标准格式',
       }
     }).filter(t => t.stock_code)
@@ -92,7 +90,7 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
 
     try {
       let content = await file.text()
-      
+
       const hasChinese = (str: string) => /[\u4e00-\u9fa5]/.test(str.slice(0, 500))
       if (!hasChinese(content)) {
         content = await new Promise<string>((resolve, reject) => {
@@ -102,9 +100,9 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
           reader.readAsText(file, 'gbk')
         })
       }
-      
+
       const result = parseCSV(content)
-      
+
       if (!result) {
         setImportResult({ success: false, message: 'CSV文件格式解析失败' })
         return
@@ -143,13 +141,13 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
   }
 
   const handleImport = async () => {
-    if (!currentFile || !user) return
+    if (!currentFile) return
 
     setUploading(true)
-    
+
     try {
       let content = await currentFile.text()
-      
+
       const hasChinese = (str: string) => /[\u4e00-\u9fa5]/.test(str.slice(0, 500))
       if (!hasChinese(content)) {
         content = await new Promise<string>((resolve, reject) => {
@@ -159,9 +157,9 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
           reader.readAsText(currentFile, 'gbk')
         })
       }
-      
+
       const lines = content.split('\n').filter(line => line.trim())
-      
+
       if (lines.length < 2) {
         setImportResult({ success: false, message: 'CSV文件为空或格式错误' })
         setUploading(false)
@@ -170,42 +168,34 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
 
       const header = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
       const matchCount = STANDARD_COLUMNS.filter(col => header.includes(col)).length
-      
+
       if (matchCount < 8) {
-        setImportResult({ 
-          success: false, 
-          message: `CSV格式不正确。请使用标准格式，表头应为：${STANDARD_COLUMNS.join(', ')}` 
+        setImportResult({
+          success: false,
+          message: `CSV格式不正确。请使用标准格式，表头应为：${STANDARD_COLUMNS.join(', ')}`
         })
         setUploading(false)
         return
       }
 
-      const trades = lines.slice(1).map(line => {
+      const tradesToImport = lines.slice(1).map(line => {
         const values = line.split(',').map(v => v.trim().replace(/"/g, ''))
         const parsed = parseRow(values)
         return {
           ...parsed,
-          user_id: user.id,
           broker_name: '标准格式',
         }
       }).filter(t => t.stock_code)
 
-      // 查询数据库中已存在的交易记录（用于去重）
-      const { data: existingTrades } = await supabase
-        .from('normalized_trades')
-        .select('stock_code, direction, quantity, price, trade_time')
-        .eq('user_id', user.id)
-
+      // 构建现有交易的唯一键集合（用于去重）
       const existingKeys = new Set<string>()
-      if (existingTrades) {
-        for (const t of existingTrades) {
-          const tradeDate = t.trade_time ? t.trade_time.split('T')[0] : ''
-          existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeDate}`)
-        }
+      for (const t of trades) {
+        const tradeDate = t.trade_time ? t.trade_time.split('T')[0] : ''
+        existingKeys.add(`${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeDate}`)
       }
 
-      // 去重：排除数据库中已存在的记录
-      const uniqueTrades = trades.filter(t => {
+      // 去重：排除已存在的记录
+      const uniqueTrades = tradesToImport.filter(t => {
         const tradeDate = t.trade_time ? t.trade_time.split('T')[0] : ''
         const key = `${t.stock_code}-${t.direction}-${t.quantity}-${t.price}-${tradeDate}`
         if (existingKeys.has(key)) return false
@@ -221,39 +211,23 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
         return
       }
 
-      // 保存到 broker_data
-      const { data: brokerData, error: brokerError } = await supabase
-        .from('broker_data')
-        .insert({
-          user_id: user.id,
-          broker_name: '标准格式',
-          raw_data: { header: header.slice(0, 10), trades: uniqueTrades.slice(0, 100) }
+            // 逐条添加到本地存储
+      for (const t of uniqueTrades) {
+        await addTrade({
+          stock_code: t.stock_code,
+          direction: t.direction as 'buy' | 'sell',
+          price: t.price,
+          quantity: t.quantity,
+          commission: t.commission || 0,
+          trade_time: t.trade_time,
         })
-        .select()
-        .single()
+      }
 
-      if (brokerError) throw brokerError
+      await reload()
 
-      const normalizedTrades = uniqueTrades.map(t => ({
-        user_id: user.id,
-        stock_code: t.stock_code,
-        direction: t.direction,
-        price: t.price,
-        quantity: t.quantity,
-        commission: t.commission || 0,
-        trade_time: t.trade_time,
-        broker_data_id: brokerData.id
-      }))
-
-      const { error: tradesError } = await supabase
-        .from('normalized_trades')
-        .insert(normalizedTrades)
-
-      if (tradesError) throw tradesError
-
-      setImportResult({ 
-        success: true, 
-        message: `导入成功！共 ${uniqueTrades.length} 条交易记录` 
+      setImportResult({
+        success: true,
+        message: `导入成功！共 ${uniqueTrades.length} 条交易记录`
       })
 
       setPreviewData([])
@@ -272,9 +246,9 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
     { title: '成交时间', dataIndex: 'trade_time', key: 'trade_time' },
     { title: '证券代码', dataIndex: 'stock_code', key: 'stock_code' },
     { title: '证券名称', dataIndex: 'stock_name', key: 'stock_name' },
-    { 
-      title: '操作', 
-      dataIndex: 'direction', 
+    {
+      title: '操作',
+      dataIndex: 'direction',
       key: 'direction',
       render: (text: string, record: any) => (
         <span className={`badge ${record.direction_type === 'buy' ? 'badge-buy' : 'badge-sell'}`}>
@@ -297,7 +271,7 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
           <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
           导入数据
         </h2>
-        
+
         {/* File Upload Button */}
         <div>
           <label className="block">
@@ -327,8 +301,8 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
       {/* Result Message */}
       {importResult && (
         <div className={`mb-6 p-4 rounded-lg border ${
-          importResult.success 
-            ? 'bg-green-50 border-green-200 text-green-700' 
+          importResult.success
+            ? 'bg-green-50 border-green-200 text-green-700'
             : 'bg-red-50 border-red-200 text-red-700'
         }`}>
           <div className="flex items-center gap-3">
@@ -379,10 +353,10 @@ export default function ImportTab({ user, supabase, onImportComplete }: ImportTa
 
       {/* Empty State - Drag & Drop Area */}
       {previewData.length === 0 && !importResult && (
-        <div 
+        <div
           className={`mb-6 border-2 border-dashed rounded-xl transition-all duration-200 ${
-            isDragging 
-              ? 'border-blue-400 bg-blue-50' 
+            isDragging
+              ? 'border-blue-400 bg-blue-50'
               : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
           }`}
           onDragOver={handleDragOver}

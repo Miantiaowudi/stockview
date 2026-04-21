@@ -1,14 +1,12 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase'
 import { Modal, Form, InputNumber, Radio, DatePicker, TimePicker, Select, message, Button } from 'antd'
 import type { SelectProps } from 'antd'
 import dayjs from 'dayjs'
+import { useLocalTrades } from '@/hooks/useLocalTrades'
 
 interface ManualEntryTabProps {
-  user: any
-  supabase: any
   onImportComplete?: (message: string) => void
 }
 
@@ -29,19 +27,19 @@ interface ManualEntry {
 // Debounce hook
 const useDebouncedValue = (value: string, delay: number) => {
   const [debouncedValue, setDebouncedValue] = useState(value)
-  
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(value)
     }, delay)
-    
+
     return () => clearTimeout(handler)
   }, [value, delay])
-  
+
   return debouncedValue
 }
 
-export default function ManualEntryTab({ user, supabase, onImportComplete }: ManualEntryTabProps) {
+export default function ManualEntryTab({ onImportComplete }: ManualEntryTabProps) {
   const [stockList, setStockList] = useState<SelectProps['options']>([])
   const [manualEntries, setManualEntries] = useState<ManualEntry[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -50,30 +48,32 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
   const [stockLoading, setStockLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const stockPageRef = useRef(1)
-  
+
   const [stockSearchInput, setStockSearchInput] = useState('')
   const debouncedStockSearch = useDebouncedValue(stockSearchInput, 300)
-  
+
+  const { addTrade, reload } = useLocalTrades()
+
   const loadStocks = async (search: string = '', page: number = 1, append: boolean = false) => {
     if (stockLoading) return
     setStockLoading(true)
-    
+
     try {
       const res = await fetch(`/api/stocks/list?search=${encodeURIComponent(search)}&page=${page}&limit=50`)
       const data = await res.json()
-      
+
       const options = (Array.isArray(data) ? data : []).map((stock: any) => ({
         value: stock.code,
         label: `${stock.code} - ${stock.name}`,
         name: stock.name,
       }))
-      
+
       if (append) {
         setStockList(prev => [...(prev || []), ...options])
       } else {
         setStockList(options)
       }
-      
+
       setHasMore(options.length >= 50)
     } catch (error) {
       console.error('加载股票列表失败:', error)
@@ -81,7 +81,7 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
       setStockLoading(false)
     }
   }
-  
+
   // Load stocks when debounced search changes
   useEffect(() => {
     if (debouncedStockSearch) {
@@ -116,13 +116,11 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
   }
 
   const handleSingleSubmit = async () => {
-    if (!user) return
-    
     try {
       const values = await form.validateFields()
-      
+
       const selectedStock = stockList?.find(opt => opt.value === values.stock)
-      
+
       const trade: ManualEntry = {
         key: Date.now().toString(),
         trade_date: values.trade_date.format('YYYY-MM-DD'),
@@ -134,7 +132,7 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
         price: values.price,
         ...calculateFees(values),
       }
-      
+
       setManualEntries([...manualEntries, trade])
       setModalOpen(false)
       message.success('添加成功')
@@ -150,7 +148,7 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
   const handlePopupScroll: React.UIEventHandler<HTMLDivElement> = (e) => {
     const target = e.target as HTMLDivElement
     const { scrollTop, clientHeight, scrollHeight } = target
-    
+
     if (scrollHeight - scrollTop - clientHeight < 50 && !stockLoading && hasMore) {
       stockPageRef.current += 1
       loadStocks(debouncedStockSearch, stockPageRef.current, true)
@@ -158,42 +156,34 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
   }
 
   const handleManualSubmit = async () => {
-    if (!user) return
-    
-    const validEntries = manualEntries.filter(entry => 
+    const validEntries = manualEntries.filter(entry =>
       entry.stock_code && entry.quantity > 0 && entry.price > 0
     )
-    
+
     if (validEntries.length === 0) {
       message.error('请至少填写一条有效的交易记录')
       return
     }
-    
+
     setSubmitting(true)
-    
+
     try {
-      const trades = validEntries.map(entry => ({
-        user_id: user.id,
-        trade_time: `${entry.trade_date}T${entry.trade_time}`,
-        stock_code: entry.stock_code,
-        stock_name: entry.stock_name,
-        direction: entry.direction,
-        quantity: entry.quantity,
-        price: entry.price,
-        amount: entry.amount,
-        commission: entry.commission,
-        stamp_duty: entry.stamp_duty
-      }))
-      
-      const { error } = await supabase.from('normalized_trades').insert(trades)
-      
-      if (error) {
-        throw error
+      for (const entry of validEntries) {
+        await addTrade({
+          stock_code: entry.stock_code,
+          direction: entry.direction,
+          price: entry.price,
+          quantity: entry.quantity,
+          commission: entry.commission,
+          trade_time: `${entry.trade_date}T${entry.trade_time}`,
+        })
       }
-      
-      message.success(`成功导入 ${trades.length} 条交易记录`)
+
+      await reload()
+
+      message.success(`成功导入 ${validEntries.length} 条交易记录`)
       setManualEntries([])
-      onImportComplete?.(`成功导入 ${trades.length} 条交易记录`)
+      onImportComplete?.(`成功导入 ${validEntries.length} 条交易记录`)
     } catch (error: any) {
       console.error('导入失败:', error)
       message.error(`导入失败: ${error.message}`)
@@ -215,7 +205,7 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
             <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
             手动录入
           </h2>
-          
+
           {/* Add Button */}
           <Button
             type="primary"
@@ -301,7 +291,7 @@ export default function ManualEntryTab({ user, supabase, onImportComplete }: Man
                 </svg>
               </div>
               <p className="text-sm text-slate-600 mb-2">
-                点击"<span className="font-semibold text-blue-600">添加一行</span>"开始录入交易记录
+                点击"<span className="font-semibold text-blue-600">添加</span>"开始录入交易记录
               </p>
               <p className="text-xs text-slate-400">支持手动添加股票买卖记录</p>
             </div>
