@@ -58,7 +58,7 @@ export default function AnalyticsPage() {
 }
 
 function AnalyticsPageContent() {
-  const { trades, loading } = useLocalTrades()
+  const { trades } = useLocalTrades()
   const [dataLoaded, setDataLoaded] = useState(false)
   const [clearedPositions, setClearedPositions] = useState<ClearedPosition[]>([])
   const [currentPositions, setCurrentPositions] = useState<CurrentPosition[]>([])
@@ -117,7 +117,6 @@ function AnalyticsPageContent() {
   }, [])
 
   // 掩码显示
-
   const formatValue = (value: number, showSign = false) => {
     if (!showData) return '****'
     const formatted = value.toLocaleString()
@@ -128,6 +127,15 @@ function AnalyticsPageContent() {
   useEffect(() => {
     if (trades.length > 0) {
       calculatePositions(trades)
+    } else {
+      // 无交易数据时重置状态
+      setClearedPositions([])
+      setCurrentPositions([])
+      setTotalPnL(0)
+      setTotalBuy(0)
+      setTotalSell(0)
+      setCurrentPnl(0)
+      setDataLoaded(true)
     }
   }, [trades])
 
@@ -140,14 +148,14 @@ function AnalyticsPageContent() {
     }
 
     updateMarketStatus()
-    const statusInterval = setInterval(updateMarketStatus, 60000) // 每分钟检查一次市场状态
+    const statusInterval = setInterval(updateMarketStatus, 60000)
 
     // 定时刷新价格
     const refreshInterval = setInterval(() => {
       if (isMarketOpen() && currentPositions.length > 0 && dataLoaded) {
         refreshPrices(currentPositions)
       }
-    }, 5000) // 开盘时每5秒刷新
+    }, 5000)
 
     return () => {
       clearInterval(statusInterval)
@@ -157,9 +165,9 @@ function AnalyticsPageContent() {
 
   // 计算已清仓和当前持仓
   async function calculatePositions(trades: Trade[]) {
-    const stockMap = new Map<string, { 
-      buys: {price: number, quantity: number, time: string}[], 
-      sells: {price: number, quantity: number, time: string}[] 
+    const stockMap = new Map<string, {
+      buys: {price: number, quantity: number, time: string}[],
+      sells: {price: number, quantity: number, time: string}[]
     }>()
 
     trades.forEach(trade => {
@@ -167,7 +175,7 @@ function AnalyticsPageContent() {
         stockMap.set(trade.stock_code, { buys: [], sells: [] })
       }
       const stock = stockMap.get(trade.stock_code)!
-      
+
       if (trade.direction === 'buy') {
         stock.buys.push({ price: trade.price, quantity: trade.quantity, time: trade.trade_time })
       } else {
@@ -194,9 +202,8 @@ function AnalyticsPageContent() {
       if (totalBuyQty > 0 && totalBuyQty === totalSellQty) {
         const profitLoss = sellTotal - buyTotal - commission
         const profitRate = (profitLoss / buyTotal) * 100
-        
-        // 获取最后卖出时间
-        const lastSellTime = data.sells.length > 0 
+
+        const lastSellTime = data.sells.length > 0
           ? data.sells.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())[0].time
           : undefined
 
@@ -217,7 +224,7 @@ function AnalyticsPageContent() {
         totalPnL += profitLoss
         totalBuyAmount += buyTotal
         totalSellAmount += sellTotal
-      } 
+      }
       // 当前持仓（买入数量 > 卖出数量）
       else if (totalBuyQty > totalSellQty) {
         const holdQuantity = totalBuyQty - totalSellQty
@@ -236,7 +243,6 @@ function AnalyticsPageContent() {
       }
     })
 
-    // 从 /price 接口读取股票名称与价格，避免重复调用 /stocks
     const allCodes = [...cleared.map(c => c.stock_code), ...current.map(c => c.stock_code)]
     if (allCodes.length > 0) {
       try {
@@ -252,26 +258,24 @@ function AnalyticsPageContent() {
         }))
         setClearedPositions(clearedWithNames)
 
-        // 为当前持仓计算实时盈亏
         if (currentWithNames.length > 0) {
-          // 计算浮动盈亏和当日盈亏
           const today = new Date()
           const dayOfWeek = today.getDay()
-          
+
           const currentWithPnL = currentWithNames.map(pos => {
             const price = prices[pos.stock_code]
             if (price) {
               const currentMarketValue = price.currentPrice * pos.hold_quantity
               const floatingPnl = currentMarketValue - pos.total_cost
               const floatingPnlRate = (floatingPnl / pos.total_cost) * 100
-              
+
               let dailyPnl = 0
               let dailyPnlRate = 0
               if (dayOfWeek !== 0 && dayOfWeek !== 6) {
                 dailyPnl = (price.currentPrice - price.yesterdayClose) * pos.hold_quantity
                 dailyPnlRate = ((price.currentPrice - price.yesterdayClose) / price.yesterdayClose) * 100
               }
-              
+
               return {
                 ...pos,
                 current_price: price.currentPrice,
@@ -285,7 +289,7 @@ function AnalyticsPageContent() {
             return pos
           })
           setCurrentPositions(currentWithPnL)
-          
+
           const totalCurrentPnl = currentWithPnL.reduce((sum, pos) => sum + (pos.daily_pnl || 0), 0)
           setCurrentPnl(totalCurrentPnl)
           setDataLoaded(true)
@@ -311,82 +315,8 @@ function AnalyticsPageContent() {
     setTotalSell(totalSellAmount)
   }
 
-  // 骨架图加载
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        {/* Header Skeleton */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-slate-200 rounded-lg animate-pulse"></div>
-                <div className="h-6 w-32 bg-slate-200 rounded animate-pulse"></div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="h-8 w-20 bg-slate-200 rounded-lg animate-pulse"></div>
-                <div className="h-6 w-24 bg-slate-200 rounded animate-pulse"></div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* 总体概览 Skeleton */}
-          <div className="mb-8">
-            <div className="h-6 w-20 bg-slate-200 rounded animate-pulse mb-4"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="bg-white rounded-xl p-5 border border-slate-200">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-slate-200 rounded-lg animate-pulse"></div>
-                    <div className="h-4 w-16 bg-slate-200 rounded animate-pulse"></div>
-                  </div>
-                  <div className="h-8 w-28 bg-slate-200 rounded animate-pulse"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Tab Skeleton */}
-          <div className="mb-6">
-            <div className="inline-flex gap-1 p-1 bg-slate-200/50 rounded-xl border border-slate-200/50 w-fit">
-              <div className="w-24 h-10 bg-slate-200 rounded-lg animate-pulse"></div>
-              <div className="w-24 h-10 bg-slate-200 rounded-lg animate-pulse"></div>
-            </div>
-          </div>
-
-          {/* Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl border-2 border-slate-200 p-5">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <div className="h-5 w-24 bg-slate-200 rounded animate-pulse mb-2"></div>
-                    <div className="h-4 w-16 bg-slate-200 rounded animate-pulse"></div>
-                  </div>
-                  <div className="text-right">
-                    <div className="h-6 w-20 bg-slate-200 rounded animate-pulse mb-1"></div>
-                    <div className="h-4 w-12 bg-slate-200 rounded animate-pulse"></div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
-                  <div>
-                    <div className="h-3 w-12 bg-slate-200 rounded animate-pulse mb-1"></div>
-                    <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
-                  </div>
-                  <div>
-                    <div className="h-3 w-12 bg-slate-200 rounded animate-pulse mb-1"></div>
-                    <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </main>
-      </div>
-    )
-  }
+  // 判断是否有数据
+  const hasData = trades.length > 0
 
   return (
     <div className="min-h-screen bg-slate-50 page-enter">
@@ -401,10 +331,9 @@ function AnalyticsPageContent() {
                 </svg>
               </div>
               <h1 className="text-lg font-bold text-slate-800">StockView 账户分析</h1>
-              {/* 市场状态指示器 */}
               <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${
-                marketStatus.isOpen 
-                  ? 'bg-green-50 text-green-700' 
+                marketStatus.isOpen
+                  ? 'bg-green-50 text-green-700'
                   : 'bg-slate-100 text-slate-500'
               }`}>
                 <span className={`w-2 h-2 rounded-full ${
@@ -440,22 +369,24 @@ function AnalyticsPageContent() {
           <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
             总体概览
-            <Button
-              type="text"
-              size="small"
-              onClick={() => setShowData(!showData)}
-              title={showData ? '隐藏数据' : '显示数据'}
-              icon={showData ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                </svg>
-              )}
-            />
+            {hasData && (
+              <Button
+                type="text"
+                size="small"
+                onClick={() => setShowData(!showData)}
+                title={showData ? '隐藏数据' : '显示数据'}
+                icon={showData ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                )}
+              />
+            )}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -538,59 +469,81 @@ function AnalyticsPageContent() {
           </div>
         </div>
 
-        {/* Tab切换 */}
-        <div className="mb-6">
-          <div className="inline-flex gap-1 p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/50">
-            <button
-              onClick={() => setActiveTab('current')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden cursor-pointer ${
-                activeTab === 'current'
-                  ? 'text-white shadow-md shadow-blue-500/25'
-                  : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'
-              }`}
+        {/* 无数据空状态 */}
+        {!hasData ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">暂无交易记录</h3>
+            <p className="text-slate-500 mb-6 text-center">导入您的交易数据，开始分析股票账户</p>
+            <Link
+              href="/dashboard/import"
+              className="px-6 py-3 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 flex items-center gap-2"
             >
-              {activeTab === 'current' && (
-                <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700" />
-              )}
-              <span className="relative z-10 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                当前持仓
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('cleared')}
-              className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden cursor-pointer ${
-                activeTab === 'cleared'
-                  ? 'text-white shadow-md shadow-blue-500/25'
-                  : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'
-              }`}
-            >
-              {activeTab === 'cleared' && (
-                <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700" />
-              )}
-              <span className="relative z-10 flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                已清仓
-              </span>
-            </button>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              导入数据
+            </Link>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Tab切换 */}
+            <div className="mb-6">
+              <div className="inline-flex gap-1 p-1 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200/50">
+                <button
+                  onClick={() => setActiveTab('current')}
+                  className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden cursor-pointer ${
+                    activeTab === 'current'
+                      ? 'text-white shadow-md shadow-blue-500/25'
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'
+                  }`}
+                >
+                  {activeTab === 'current' && (
+                    <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700" />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    当前持仓
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('cleared')}
+                  className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200 relative overflow-hidden cursor-pointer ${
+                    activeTab === 'cleared'
+                      ? 'text-white shadow-md shadow-blue-500/25'
+                      : 'text-slate-600 hover:text-slate-800 hover:bg-white/60'
+                  }`}
+                >
+                  {activeTab === 'cleared' && (
+                    <span className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700" />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    已清仓
+                  </span>
+                </button>
+              </div>
+            </div>
 
-        {/* Position Lists */}
-        {activeTab === 'current' && (
-          <PositionList positions={currentPositions} type="current" showData={showData} loaded={dataLoaded} />
-        )}
+            {/* Position Lists */}
+            {activeTab === 'current' && (
+              <PositionList positions={currentPositions} type="current" showData={showData} loaded={dataLoaded} />
+            )}
 
-        {activeTab === 'cleared' && (
-          <PositionList positions={clearedPositions} type="cleared" showData={showData} loaded={dataLoaded} />
+            {activeTab === 'cleared' && (
+              <PositionList positions={clearedPositions} type="cleared" showData={showData} loaded={dataLoaded} />
+            )}
+          </>
         )}
       </main>
     </div>
   )
 }
-
-
