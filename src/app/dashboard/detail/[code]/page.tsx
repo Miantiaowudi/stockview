@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import { getStockPrices, StockPrice } from '@/lib/stockApi'
-import { useDashboardUser } from '@/components/DashboardUserProvider'
+import { useLocalTrades } from '@/hooks/useLocalTrades'
 import Link from 'next/link'
 import KLineChart from '../components/KLineChart'
 import TradeTable from '../components/TradeTable'
@@ -32,17 +30,13 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   const params = use(props.params)
   const stockCode = params.code
 
-  const user = useDashboardUser()
-  const [authToken, setAuthToken] = useState<string>('')
+  const { trades: allTrades, loading: tradesLoading } = useLocalTrades()
   const [loading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
   const [trades, setTrades] = useState<Trade[]>([])
   const [stockName, setStockName] = useState('')
   const [stockPrice, setStockPrice] = useState<StockPrice | null>(null)
   const [klineData, setKlineData] = useState<KLineItem[]>([])
-  
-  const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     if (!stockCode) return
@@ -68,29 +62,24 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
   }, [stockCode])
 
   useEffect(() => {
-    if (!user || !stockCode) return
+    if (!stockCode) return
     const loadData = async () => {
       setDataLoading(true)
-      const { data: tradesData, error } = await supabase
-        .from('normalized_trades')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('stock_code', stockCode)
-        .order('trade_time', { ascending: true })
 
-      if (error) {
-        console.error('加载交易数据失败:', error)
-        return
-      }
-      setTrades(tradesData || [])
-      
+      // 从本地存储获取交易数据并按股票代码过滤
+      const stockTrades = allTrades
+        .filter((t) => t.stock_code === stockCode)
+        .sort((a, b) => new Date(a.trade_time).getTime() - new Date(b.trade_time).getTime())
+
+      setTrades(stockTrades)
+
       // 计算持仓数量
-      const buyTradesData = (tradesData || []).filter((t: Trade) => t.direction === 'buy')
-      const sellTradesData = (tradesData || []).filter((t: Trade) => t.direction === 'sell')
+      const buyTradesData = stockTrades.filter((t: Trade) => t.direction === 'buy')
+      const sellTradesData = stockTrades.filter((t: Trade) => t.direction === 'sell')
       const totalBuyQty = buyTradesData.reduce((sum: number, t: Trade) => sum + t.quantity, 0)
       const totalSellQty = sellTradesData.reduce((sum: number, t: Trade) => sum + t.quantity, 0)
       const holdQuantity = totalBuyQty - totalSellQty
-      
+
       // 从 /price 接口读取股票名称；有持仓时同时读取实时价格
       try {
         const prices = await getStockPrices([stockCode])
@@ -109,17 +98,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
       }
       setDataLoading(false)
     }
-    loadData()
-  }, [user, stockCode, supabase])
+    if (!tradesLoading) {
+      loadData()
+    }
+  }, [stockCode, allTrades, tradesLoading])
 
 
-  const handleLogout = async () => {
-    // 广播退出消息，让其他窗口刷新
-    const { broadcastLogout } = await import('@/hooks/useAuthSync')
-    broadcastLogout()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }
   const buyTrades = trades.filter(t => t.direction === 'buy')
   const sellTrades = trades.filter(t => t.direction === 'sell')
   const totalBuy = buyTrades.reduce((sum, t) => sum + t.price * t.quantity, 0)
@@ -242,19 +226,12 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
               <Link href="/guide" className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
                 指南
               </Link>
-              <Link 
-                href="/dashboard" 
+              <Link
+                href="/dashboard"
                 className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
               >
                 返回列表
               </Link>
-              <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
-              <button 
-                onClick={handleLogout} 
-                className="px-3 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 cursor-pointer"
-              >
-                退出
-              </button>
             </div>
           </div>
         </div>
@@ -328,7 +305,6 @@ export default function StockDetailPage(props: { params: Promise<{ code: string 
           <StockAnalysis
             stockCode={stockCode}
             stockName={stockName}
-            authToken={authToken}
             klineData={klineData}
             trades={trades}
           />
