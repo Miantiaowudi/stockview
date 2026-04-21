@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from 'antd'
-import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getStockPrices, StockPrice, isMarketOpen, getNextMarketTime } from '@/lib/stockApi'
 import PositionList from './components/PositionList'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { useDashboardUser } from '@/components/DashboardUserProvider'
+import { useLocalTrades } from '@/hooks/useLocalTrades'
 
 // Export interfaces for components
 export interface Trade {
@@ -60,10 +58,8 @@ export default function AnalyticsPage() {
 }
 
 function AnalyticsPageContent() {
-  const user = useDashboardUser()
-  const [loading] = useState(false)
+  const { trades, loading } = useLocalTrades()
   const [dataLoaded, setDataLoaded] = useState(false)
-  const [trades, setTrades] = useState<Trade[]>([])
   const [clearedPositions, setClearedPositions] = useState<ClearedPosition[]>([])
   const [currentPositions, setCurrentPositions] = useState<CurrentPosition[]>([])
   const [stockPrices, setStockPrices] = useState<Record<string, StockPrice>>({})
@@ -119,45 +115,21 @@ function AnalyticsPageContent() {
       console.error('刷新价格失败:', e)
     }
   }, [])
-  
-  const router = useRouter()
 
-// 掩码显示
+  // 掩码显示
 
   const formatValue = (value: number, showSign = false) => {
     if (!showData) return '****'
     const formatted = value.toLocaleString()
     return showSign && value > 0 ? '+' + formatted : formatted
   }
-  
-  const supabase = createClient()
-
-
-  // 检查用户登录
 
   // 加载交易数据并计算
   useEffect(() => {
-    if (!user) return
-
-    const loadData = async () => {
-      // 获取所有交易记录
-      const { data: tradesData, error } = await supabase
-        .from('normalized_trades')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('trade_time', { ascending: true })
-
-      if (error) {
-        console.error('加载交易数据失败:', error)
-        return
-      }
-
-      setTrades(tradesData || [])
-      calculatePositions(tradesData || [])
+    if (trades.length > 0) {
+      calculatePositions(trades)
     }
-
-    loadData()
-  }, [user, supabase])
+  }, [trades])
 
   // 市场状态和定时轮询
   useEffect(() => {
@@ -339,15 +311,6 @@ function AnalyticsPageContent() {
     setTotalSell(totalSellAmount)
   }
 
-  // 登出
-  const handleLogout = async () => {
-    // 广播退出消息，让其他窗口刷新
-    const { broadcastLogout } = await import('@/hooks/useAuthSync')
-    broadcastLogout()
-    await supabase.auth.signOut()
-    router.push('/auth/login')
-  }
-
   // 骨架图加载
   if (loading) {
     return (
@@ -457,8 +420,8 @@ function AnalyticsPageContent() {
               <Link href="/guide" className="px-3 py-2 text-sm text-slate-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
                 指南
               </Link>
-              <Link 
-                href="/dashboard/import" 
+              <Link
+                href="/dashboard/import"
                 className="px-3 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 flex items-center gap-1"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -466,10 +429,6 @@ function AnalyticsPageContent() {
                 </svg>
                 导入数据
               </Link>
-              <span className="hidden sm:inline text-sm text-slate-500">{user?.email}</span>
-              <Button danger onClick={handleLogout} size="small">
-                退出
-              </Button>
             </div>
           </div>
         </div>
