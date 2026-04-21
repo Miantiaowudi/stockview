@@ -156,7 +156,7 @@ function AnalyticsPageContent() {
   }, [currentPositions, dataLoaded, refreshPrices])
 
   // 计算已清仓和当前持仓
-  const calculatePositions = async (trades: Trade[]) => {
+  async function calculatePositions(trades: Trade[]) {
     const stockMap = new Map<string, { 
       buys: {price: number, quantity: number, time: string}[], 
       sells: {price: number, quantity: number, time: string}[] 
